@@ -651,20 +651,49 @@ function pollIntervalMs(inst) {
 }
 
 // --- News (GDELT DOC API) -----------------------------------------------------
-// Free, keyless, CORS *; edge-cached ~15 min and aggressively rate-limited, so
-// results are cached per query and refreshed no faster than every 15 minutes.
+// GDELT is keyless and CORS-permissive ON SUCCESS: verified live 2026-07-17 that
+// a 200 response still carries `Access-Control-Allow-Origin: *`. Its CORS policy
+// has NOT changed. The production failures are RATE-LIMITING: GDELT enforces
+// "one request every 5 seconds" per IP, and its 429 responses carry NO CORS
+// header, so a browser fetch() rejects and surfaces it as a CORS error. The old
+// code cached only successes, so every failing poll re-hit the endpoint — the
+// "retrying every cycle, no backoff" bug. Two guards now prevent hammering:
+//   1. GDELT_MIN_SPACING — at most one network attempt per 6s across ALL queries
+//      (GDELT limits per IP globally, so spacing is shared, not per-instrument).
+//   2. Exponential failure backoff — consecutive failures push `blockedUntil`
+//      out (30s, 60s, 120s… capped at 10min); while blocked, no network call is
+//      made at all. A reachable response clears the backoff.
+// While spaced-out or backed-off, fetchNews returns stale cache if present,
+// otherwise an explicit unavailable result. It never fabricates headlines.
+// (fetchNews is I/O with real timing; the pure calculation layer is unaffected.)
 const newsCache = Object.create(null);
 const NEWS_TTL = 15 * 60 * 1000;
+const GDELT_MIN_SPACING = 6000;             // > GDELT's 1-req/5s rule, with margin
+const GDELT_BACKOFF_BASE = 30000;           // first failure waits 30s before retry
+const GDELT_BACKOFF_MAX = 10 * 60 * 1000;   // cap the backoff at 10 minutes
+const gdeltState = { lastAttempt: 0, blockedUntil: 0, fails: 0 };
 
 async function fetchNews(inst) {
   const q = inst.newsQuery;
   const hit = newsCache[q];
   if (hit && Date.now() - hit.at < NEWS_TTL) return hit.value;
+
+  const now = Date.now();
+  // Backoff or spacing active: do not touch the network. Return best available.
+  if (now < gdeltState.blockedUntil || now - gdeltState.lastAttempt < GDELT_MIN_SPACING) {
+    if (hit) return hit.value;
+    return { ok: false, items: [], error: 'gdelt-throttled', backoff: true };
+  }
+
+  gdeltState.lastAttempt = now;
   try {
     const url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' +
       encodeURIComponent(q + ' sourcelang:english') +
       '&mode=artlist&format=json&maxrecords=12&timespan=3d&sort=datedesc';
     const j = await getJson(url, 20000);
+    // Reachable endpoint: clear any backoff regardless of item count.
+    gdeltState.fails = 0;
+    gdeltState.blockedUntil = 0;
     const items = (j.articles || []).map((a) => ({
       title: String(a.title || '').trim(),
       url: a.url,
@@ -675,6 +704,10 @@ async function fetchNews(inst) {
     if (value.ok) newsCache[q] = { at: Date.now(), value };
     return value;
   } catch (err) {
+    // Exponential backoff so a failing endpoint isn't hammered every cycle.
+    gdeltState.fails += 1;
+    gdeltState.blockedUntil = Date.now() +
+      Math.min(GDELT_BACKOFF_BASE * 2 ** (gdeltState.fails - 1), GDELT_BACKOFF_MAX);
     // Stale cache beats nothing; otherwise report unavailable — never fabricate.
     if (hit) return hit.value;
     return { ok: false, items: [], error: String(err && err.message || err) };
