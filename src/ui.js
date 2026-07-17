@@ -14,6 +14,7 @@ const appState = {
   theme: 'dark',
   assetClass: 'crypto',
   instrumentId: 'BTCUSD',
+  timeframe: '1h',       // user-chosen intraday tf; daily-sourced assets lock to '1d'
   phase: 'idle',         // idle | loading | ready
   series: null,          // { candles, meta } from data layer
   analysis: null,        // runAnalysis() result
@@ -88,6 +89,7 @@ function renderChrome() {
   $('#selection-title').textContent = T('selectionTitle');
   $('#label-class').textContent = T('assetClass');
   $('#label-instrument').textContent = T('instrument');
+  $('#label-timeframe').textContent = T('timeframe');
   $('#btn-run').textContent = appState.phase === 'loading' ? T('running') : T('runAnalysis');
   $('#btn-run').disabled = appState.phase === 'loading';
   $('#auto-note').textContent = T('autoRefreshNote');
@@ -99,6 +101,20 @@ function renderChrome() {
   const instSel = $('#sel-instrument');
   instSel.innerHTML = INSTRUMENTS[appState.assetClass]
     .map((i) => `<option value="${i.id}" ${i.id === appState.instrumentId ? 'selected' : ''}>${L === 'ar' ? i.labelAr : i.labelEn}</option>`).join('');
+
+  // timeframe: full range for Binance-sourced instruments (crypto + gold proxy);
+  // daily-locked with a visible reason for daily-sourced classes (forex/silver).
+  const inst = findInstrument(appState.instrumentId);
+  const intraday = supportsIntradayTimeframe(inst);
+  const tfSel = $('#sel-timeframe');
+  const tfKeys = { '1h': 'tf1h', '4h': 'tf4h', '8h': 'tf8h', '12h': 'tf12h', '1d': 'tf1d' };
+  const shownTf = intraday ? appState.timeframe : '1d';
+  const tfOptions = intraday ? TIMEFRAMES : ['1d'];
+  tfSel.innerHTML = tfOptions
+    .map((tf) => `<option value="${tf}" ${tf === shownTf ? 'selected' : ''}>${T(tfKeys[tf])}</option>`).join('');
+  tfSel.disabled = !intraday;
+  $('#tf-note').textContent = intraday ? '' : T('tfDailyLocked');
+  $('#tf-note').style.display = intraday ? 'none' : '';
 
   $('#footer-sources').textContent = T('footerSources');
   $('#footer-disclaimer').textContent = T('footerDisclaimer');
@@ -405,11 +421,14 @@ function renderCharts() {
   const N = 120;
   const candles = s.candles;
   const cl = candles.map((c) => c.c);
+  // label granularity by timeframe: 1h -> HH:MM; 4h/8h/12h -> MM-DD HH:MM
+  // (same intraday clock recurs across days, so the date is needed); 1d -> MM-DD
+  const tf = s.meta.timeframe;
   const labels = candles.slice(-N).map((c) => {
-    const dt = new Date(c.t);
-    return s.meta.timeframe === '1h'
-      ? dt.toISOString().slice(11, 16)
-      : dt.toISOString().slice(5, 10);
+    const iso = new Date(c.t).toISOString();
+    if (tf === '1h') return iso.slice(11, 16);
+    if (tf === '1d') return iso.slice(5, 10);
+    return iso.slice(5, 10) + ' ' + iso.slice(11, 16);
   });
   const base = {
     responsive: true, animation: false,
@@ -491,7 +510,7 @@ async function runFlow() {
   appState.series = null; appState.analysis = null;
   renderAll();
   try {
-    const series = await loadSeries(inst);
+    const series = await loadSeries(inst, appState.timeframe);
     // news is optional garnish — analysis proceeds without it
     let news = null;
     try { news = await fetchNews(inst); } catch (e) { news = { ok: false, items: [] }; }
@@ -546,7 +565,16 @@ function initUi() {
     appState.instrumentId = INSTRUMENTS[appState.assetClass][0].id;
     renderChrome();
   });
-  $('#sel-instrument').addEventListener('change', (e) => { appState.instrumentId = e.target.value; });
+  $('#sel-instrument').addEventListener('change', (e) => {
+    appState.instrumentId = e.target.value;
+    // GOLD (intraday-capable) and SILVER (daily-locked) share the commodities
+    // class, so the timeframe gating must refresh on instrument change too.
+    renderChrome();
+  });
+  $('#sel-timeframe').addEventListener('change', (e) => {
+    const inst = findInstrument(appState.instrumentId);
+    if (supportsIntradayTimeframe(inst)) appState.timeframe = e.target.value;
+  });
   $('#btn-run').addEventListener('click', runFlow);
   renderAll();
 }

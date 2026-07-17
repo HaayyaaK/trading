@@ -20,9 +20,25 @@
 // (ATR, Keltner, ADX) and to mark volume indicators unavailable.
 
 // EMA-200 is the slowest lookback in the model. History targets:
-//   hourly series: 500 candles (200 lookback + ~300 warm-up for EMA convergence)
-//   daily series:  ~230 candles (max available from free daily-fix sources; > 200)
-const HOURLY_LIMIT = 500;
+//   Binance series: 500 candles at every interval (200 lookback + ~300 warm-up).
+//     Verified live 2026-07-17 that Binance returns 500 candles for BTC and the
+//     PAXG gold proxy at 1h/4h/8h/12h/1d — always >= the 250 needed for EMA-200.
+//   daily fix series: ~230 candles (max available from free daily-fix sources; > 200)
+const BINANCE_CANDLE_LIMIT = 500;
+
+// User-selectable timeframes apply ONLY to Binance-sourced instruments (crypto +
+// the gold proxy). Forex and silver come from daily-fix sources (ECB / gold-api
+// spot) with one point per day, so they stay '1d' regardless — synthesizing
+// sub-daily forex candles from daily data is explicitly disallowed. The UI locks
+// their timeframe selector to Daily with a visible reason.
+const TIMEFRAMES = ['1h', '4h', '8h', '12h', '1d'];
+function supportsIntradayTimeframe(inst) {
+  return inst.source === 'binance' || inst.source === 'binance+goldapi';
+}
+function effectiveTimeframe(inst, timeframe) {
+  if (!supportsIntradayTimeframe(inst)) return '1d';
+  return TIMEFRAMES.includes(timeframe) ? timeframe : (inst.timeframe || '1h');
+}
 
 const INSTRUMENTS = {
   crypto: [
@@ -92,8 +108,9 @@ function candleFromDailyClose(dateStr, close) {
 }
 
 // --- History fetchers (one full load per asset switch) -----------------------
-async function fetchBinanceHistory(symbol) {
-  const k = await binanceJson(`/api/v3/klines?symbol=${symbol}&interval=1h&limit=${HOURLY_LIMIT}`);
+async function fetchBinanceHistory(symbol, timeframe) {
+  const iv = TIMEFRAMES.includes(timeframe) ? timeframe : '1h';
+  const k = await binanceJson(`/api/v3/klines?symbol=${symbol}&interval=${iv}&limit=${BINANCE_CANDLE_LIMIT}`);
   if (!Array.isArray(k) || k.length < 250) throw new Error('short kline response');
   return k.map(candleFromKline);
 }
@@ -131,8 +148,9 @@ function seedDailyCandles(points) {
 }
 
 // --- Latest-tick fetchers (poll: mutate last candle, never re-fetch history) --
-async function fetchBinanceLatest(symbol) {
-  const k = await binanceJson(`/api/v3/klines?symbol=${symbol}&interval=1h&limit=1`);
+async function fetchBinanceLatest(symbol, timeframe) {
+  const iv = TIMEFRAMES.includes(timeframe) ? timeframe : '1h';
+  const k = await binanceJson(`/api/v3/klines?symbol=${symbol}&interval=${iv}&limit=1`);
   if (!Array.isArray(k) || !k.length) throw new Error('empty latest kline');
   return candleFromKline(k[0]);
 }
@@ -159,16 +177,18 @@ async function fetchForexLatest(pairId) {
 // --- Series assembly with fallbacks ------------------------------------------
 // Returns { candles, meta } where meta.live is false when the embedded snapshot
 // had to be used. Never throws — the caller always gets a renderable series.
-async function loadSeries(instrument) {
+async function loadSeries(instrument, timeframe) {
   const inst = typeof instrument === 'string' ? findInstrument(instrument) : instrument;
+  const binanceSrc = inst.source === 'binance' || inst.source === 'binance+goldapi';
+  const tf = effectiveTimeframe(inst, timeframe);
   const meta = {
-    id: inst.id, timeframe: inst.timeframe, live: true, spot: null,
-    ohlc: inst.timeframe === '1h', hasVolume: inst.timeframe === '1h',
+    id: inst.id, timeframe: tf, live: true, spot: null,
+    ohlc: binanceSrc, hasVolume: binanceSrc,
     note: null,
   };
   try {
-    if (inst.source === 'binance' || inst.source === 'binance+goldapi') {
-      const candles = await fetchBinanceHistory(inst.symbol);
+    if (binanceSrc) {
+      const candles = await fetchBinanceHistory(inst.symbol, tf);
       if (inst.metal) {
         try { meta.spot = await fetchMetalSpot(inst.metal); } catch (e) { /* spot is optional garnish */ }
       }
@@ -235,15 +255,16 @@ function applyDailyTick(candles, tick) {
   }
 }
 
-// Mutates the tip of an HOURLY series from a fresh kline: same open-time ->
-// replace (kline is the still-forming candle), newer -> push and trim head.
-function applyHourlyTick(candles, tick) {
+// Mutates the tip of a Binance (intraday or daily) series from a fresh kline:
+// same open-time -> replace (kline is the still-forming candle), newer -> push
+// and trim head. Keys on the kline open-time, so it works at any interval.
+function applyIntradayTick(candles, tick) {
   const last = candles[candles.length - 1];
   if (last && last.t === tick.t) {
     candles[candles.length - 1] = tick;
   } else if (!last || tick.t > last.t) {
     candles.push(tick);
-    if (candles.length > HOURLY_LIMIT + 24) candles.splice(0, candles.length - HOURLY_LIMIT);
+    if (candles.length > BINANCE_CANDLE_LIMIT + 24) candles.splice(0, candles.length - BINANCE_CANDLE_LIMIT);
   }
 }
 
@@ -252,8 +273,8 @@ function applyHourlyTick(candles, tick) {
 async function pollTick(inst, series) {
   try {
     if (inst.source === 'binance' || inst.source === 'binance+goldapi') {
-      const tick = await fetchBinanceLatest(inst.symbol);
-      applyHourlyTick(series.candles, tick);
+      const tick = await fetchBinanceLatest(inst.symbol, series.meta.timeframe);
+      applyIntradayTick(series.candles, tick);
       if (inst.metal) {
         try { series.meta.spot = await fetchMetalSpot(inst.metal); } catch (e) { /* keep old spot */ }
       }

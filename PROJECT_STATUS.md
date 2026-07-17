@@ -1,0 +1,85 @@
+# Project status & decisions — Market Mirsad (hayyaak.trade)
+
+A single-file, client-side, bilingual (AR/EN) multi-asset **technical-analysis
+and visualization** dashboard. Analysis-not-advice by design (no buy/sell/verdict
+language). Built in five phases (data layer → indicator math → UI → written
+report → single-file inlining); now under a follow-up pass (Tracks 1–5).
+
+This file records **decisions and intentional exceptions** so they aren't
+re-litigated or accidentally reverted. It is not a changelog — see git history.
+
+---
+
+## Architecture invariants (still in force)
+
+- **Analysis, not advice (§0):** descriptive readings only; the banned-language
+  check runs across market states in both languages. The word "signal" is even
+  avoided in copy and field names (MACD's signal line → "reference line").
+- **No `localStorage`/`sessionStorage` without explicit sign-off (§4):** all
+  state is in-session JS. Not added.
+- **Deterministic calculations:** `runAnalysis` / `buildReport` are pure
+  functions of their inputs — same candles/headlines in, same output out.
+- **Explicit "not enough data" states:** indicators return `na` rather than
+  padded/invented values; NA is surfaced in the UI and narrated in the report.
+- **Live-verify any new data source before committing to it** (CORS + keyless).
+
+## Data sources (all keyless, CORS-verified, no proxies)
+
+| Source | Role |
+|---|---|
+| Binance REST (+ data-api.binance.vision mirror) | Crypto + gold-proxy OHLCV, all timeframes |
+| Frankfurter (ECB) | Forex daily history |
+| open.er-api.com | Forex latest daily tick |
+| gold-api.com | Live XAU/XAG spot |
+| GDELT DOC API | News headlines (best-effort; see below) |
+
+---
+
+## Decisions
+
+### Economic calendar — EVALUATED AND DECLINED (2026-07, Track 2)
+**Decision: do not build.** No free, keyless, CORS-permissive economic-calendar
+source exists that works from a pure client-side static page, and adding a
+same-origin server proxy isn't worth it for this feature (it would break the
+single-file/no-server model). Sources live-checked and rejected:
+
+| Source | Keyless | Real data | CORS from browser | Verdict |
+|---|---|---|---|---|
+| ForexFactory feed (`nfs.faireconomy.media`) | yes | yes | **no** (no ACAO on GET; OPTIONS→405) | rejected |
+| TradingView `economic-calendar/events` | yes | — | 403 without session/referer | rejected |
+| TradingEconomics guest (`guest:guest`) | was | — | 410 Gone (discontinued) | rejected |
+
+Do **not** re-attempt from scratch. Only revisit if (a) a genuinely new
+keyless+CORS source appears, or (b) there's a deliberate decision to accept a
+cached same-origin IIS proxy (the one viable path, explicitly declined here).
+
+### GDELT news — rate-limiting, not a CORS change (2026-07, Track 1)
+GDELT's CORS policy is unchanged (200s carry `Access-Control-Allow-Origin: *`);
+its failures are rate-limiting (1 req/5s per IP), whose 429s lack CORS headers
+and so surface as CORS errors. `fetchNews` now enforces a shared 6s request
+spacing + exponential failure backoff (30s→…→10min cap), serving stale cache or
+an explicit unavailable state — never fabricated headlines.
+
+### Timeframe availability is per-asset-class (2026-07, Track 2)
+Timeframe selector (1h/4h/8h/12h/1d) applies only to Binance-sourced instruments
+(crypto + gold proxy), verified to return ≥250 candles at every interval (EMA-200
+valid). Forex + silver are daily at the source, so they **lock to Daily with a
+visible reason** — sub-daily forex candles are never synthesized from daily data.
+
+---
+
+## Intentional exceptions to the original brief
+
+- **`assets/` folder vs the strict single-file rule (§1).** The follow-up brief
+  deliberately introduces a sibling `assets/` folder (favicon set + manifest in
+  Track 2; local Chart.js/ECharts/FontAwesome in Track 4) for the production
+  deployment. This is an **accepted, documented relaxation** of "one
+  self-contained .html file," not an oversight — do not try to re-inline these.
+  `index.html` remains the single application file; `assets/` holds static
+  siblings served alongside it.
+
+---
+
+## Deferred / not done
+- Economic calendar (declined — see above).
+- Persisted language/theme (would require storage; needs explicit sign-off per §4).
