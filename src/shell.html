@@ -43,56 +43,60 @@
   </header>
 
   <main>
-    <section class="card">
-      <h2 id="selection-title"></h2>
-      <div class="selection-grid">
-        <div class="field"><label id="label-class" for="sel-class"></label><select id="sel-class"></select></div>
-        <div class="field"><label id="label-instrument" for="sel-instrument"></label><select id="sel-instrument"></select></div>
-        <div class="field"><label id="label-timeframe" for="sel-timeframe"></label><select id="sel-timeframe"></select></div>
-        <div><button id="btn-run" class="btn-primary" type="button"></button></div>
+    <section class="card" data-card="selection">
+      <h2 class="card-head"><span class="card-title" id="selection-title"></span></h2>
+      <div class="card-body">
+        <div class="selection-grid">
+          <div class="field"><label id="label-class" for="sel-class"></label><select id="sel-class"></select></div>
+          <div class="field"><label id="label-instrument" for="sel-instrument"></label><select id="sel-instrument"></select></div>
+          <div class="field"><label id="label-timeframe" for="sel-timeframe"></label><select id="sel-timeframe"></select></div>
+          <div><button id="btn-run" class="btn-primary" type="button"></button></div>
+        </div>
+        <div class="hint" id="tf-note"></div>
+        <div class="hint" id="auto-note"></div>
       </div>
-      <div class="hint" id="tf-note"></div>
-      <div class="hint" id="auto-note"></div>
     </section>
 
-    <section class="card">
-      <h2 id="reading-title"></h2>
-      <div id="reading-body"></div>
-    </section>
-
-    <section class="card">
-      <h2 id="report-title"></h2>
-      <div id="report-body"></div>
+    <section class="card" data-card="reading">
+      <h2 class="card-head"><span class="card-title" id="reading-title"></span></h2>
+      <div class="card-body"><div id="reading-body"></div></div>
     </section>
 
     <div class="two-col">
       <div class="col">
-        <section class="card">
-          <h2 id="tiers-title"></h2>
-          <div id="tiers-body"></div>
+        <section class="card" data-card="tiers">
+          <h2 class="card-head"><span class="card-title" id="tiers-title"></span></h2>
+          <div class="card-body"><div id="tiers-body"></div></div>
         </section>
-        <section class="card">
-          <h2 id="indicators-title"></h2>
-          <div id="indicators-body"></div>
+        <section class="card" data-card="indicators">
+          <h2 class="card-head"><span class="card-title" id="indicators-title"></span></h2>
+          <div class="card-body"><div id="indicators-body"></div></div>
         </section>
-        <section class="card">
-          <h2 id="levels-title"></h2>
-          <div id="levels-body"></div>
+        <section class="card" data-card="levels">
+          <h2 class="card-head"><span class="card-title" id="levels-title"></span></h2>
+          <div class="card-body"><div id="levels-body"></div></div>
         </section>
       </div>
       <div class="col">
-        <section class="card">
-          <h2 id="news-title"></h2>
-          <div id="news-body"></div>
+        <section class="card" data-card="news">
+          <h2 class="card-head"><span class="card-title" id="news-title"></span></h2>
+          <div class="card-body"><div id="news-body"></div></div>
         </section>
-        <section class="card">
-          <h2 id="charts-title"></h2>
-          <div class="chart-box"><div class="t" id="chart-price-t"></div><canvas id="chart-price"></canvas></div>
-          <div class="chart-box"><div class="t" id="chart-volume-t"></div><canvas id="chart-volume"></canvas><div class="chart-na" id="chart-volume-na" style="display:none"></div></div>
-          <div class="chart-box"><div class="t" id="chart-volatility-t"></div><canvas id="chart-volatility"></canvas></div>
+        <section class="card" data-card="charts">
+          <h2 class="card-head"><span class="card-title" id="charts-title"></span></h2>
+          <div class="card-body">
+            <div class="chart-box"><div class="t" id="chart-price-t"></div><canvas id="chart-price"></canvas></div>
+            <div class="chart-box"><div class="t" id="chart-volume-t"></div><canvas id="chart-volume"></canvas><div class="chart-na" id="chart-volume-na" style="display:none"></div></div>
+            <div class="chart-box"><div class="t" id="chart-volatility-t"></div><canvas id="chart-volatility"></canvas></div>
+          </div>
         </section>
       </div>
     </div>
+
+    <section class="card" data-card="report">
+      <h2 class="card-head"><span class="card-title" id="report-title"></span></h2>
+      <div class="card-body"><div id="report-body"></div></div>
+    </section>
   </main>
 
   <footer class="site">

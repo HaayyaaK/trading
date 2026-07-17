@@ -335,14 +335,22 @@ function renderDetail() {
   // tier-3 composite as its own row
   const t3 = a.indicators.find((i) => i.id.startsWith('t3'));
   if (t3) html += `<div class="cat-title">${T('tier3')}</div><div class="ind-grid" style="grid-template-columns:1fr">${tileHtml(t3, d)}</div>`;
-  // consensus
+  // consensus — a proportional stacked bar (at-a-glance) + a labelled legend.
+  // Describes indicator STATES, not votes on a trade (§0 framing preserved).
   const c = a.consensus;
-  html += `<div class="consensus">
-      <span class="chip bull">${T('bullish')} <span class="count num">${c.bullish}</span></span>
-      <span class="chip bear">${T('bearish')} <span class="count num">${c.bearish}</span></span>
-      <span class="chip neut">${T('neutral')} <span class="count num">${c.neutral}</span></span>
-      ${c.na ? `<span class="chip na">${T('naShort')} <span class="count num">${c.na}</span></span>` : ''}
-      <span class="hint">${T('consensusNote')}</span>
+  const total = (c.bullish + c.bearish + c.neutral + c.na) || 1;
+  const pct = (n) => (n / total * 100).toFixed(2);
+  const seg = (n, cls) => (n ? `<span class="${cls}" style="inline-size:${pct(n)}%"></span>` : '');
+  const chip = (n, cls, key) => `<span class="chip ${cls}">${T(key)} <span class="count num">${n}</span></span>`;
+  html += `<div>
+      <div class="consensus-bar" role="img" aria-label="${c.bullish} ${T('bullish')}, ${c.neutral} ${T('neutral')}, ${c.bearish} ${T('bearish')}">
+        ${seg(c.bullish, 'seg-bull')}${seg(c.neutral, 'seg-neut')}${seg(c.bearish, 'seg-bear')}${seg(c.na, 'seg-na')}
+      </div>
+      <div class="consensus-legend">
+        ${chip(c.bullish, 'bull', 'bullish')}${chip(c.neutral, 'neut', 'neutral')}${chip(c.bearish, 'bear', 'bearish')}
+        ${c.na ? chip(c.na, 'na', 'naShort') : ''}
+      </div>
+      <div class="hint" style="margin-block-start:8px">${T('consensusNote')}</div>
     </div>`;
   indBox.innerHTML = html;
 
@@ -412,6 +420,10 @@ function destroyCharts() {
 
 function renderCharts() {
   $('#charts-title').textContent = appState.lang === 'ar' ? 'الرسوم المصغّرة' : 'Mini-charts';
+  // Skip drawing while the charts card is collapsed: Chart.js sizes to its
+  // container, which is display:none when collapsed and would render at 0px.
+  // The collapse toggle re-runs renderCharts() on expand, so sizing is correct.
+  if (cardCollapsed('charts')) return;
   const s = appState.series;
   destroyCharts();
   const priceT = $('#chart-price-t'), volT = $('#chart-volume-t'), vlyT = $('#chart-volatility-t');
@@ -553,7 +565,37 @@ function startPolling(inst) {
 // ---------------------------------------------------------------------------
 // Wiring
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Collapsible cards — every card header toggles its body. Expanded by default.
+// Collapse state lives as a class on the static .card element, so it survives
+// renderAll() (which only rewrites body innerHTML) with no storage (§4).
+// ---------------------------------------------------------------------------
+function cardSection(name) { return document.querySelector(`.card[data-card="${name}"]`); }
+function cardCollapsed(name) { const s = cardSection(name); return !!s && s.classList.contains('collapsed'); }
+
+function setupCollapsibleCards() {
+  const chevron = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  document.querySelectorAll('.card .card-head').forEach((head) => {
+    head.appendChild(el('span', 'card-chevron', chevron));
+    head.setAttribute('role', 'button');
+    head.setAttribute('tabindex', '0');
+    head.setAttribute('aria-expanded', 'true');
+    const toggle = () => {
+      const section = head.closest('.card');
+      const collapsed = section.classList.toggle('collapsed');
+      head.setAttribute('aria-expanded', String(!collapsed));
+      // charts must be (re)drawn at real size when their card becomes visible
+      if (!collapsed && section.dataset.card === 'charts') renderCharts();
+    };
+    head.addEventListener('click', toggle);
+    head.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+}
+
 function initUi() {
+  setupCollapsibleCards();
   $('#btn-ar').addEventListener('click', () => { appState.lang = 'ar'; renderAll(); });
   $('#btn-en').addEventListener('click', () => { appState.lang = 'en'; renderAll(); });
   $('#btn-theme').addEventListener('click', () => {
