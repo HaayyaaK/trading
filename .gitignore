@@ -25,9 +25,11 @@ assets/Chart.js-v4.5.1/
 assets/echarts-v6.1.0/**
 !assets/echarts-v6.1.0/dist/
 !assets/echarts-v6.1.0/dist/echarts.min.js
-# FontAwesome: keep the aggregate CSS + the webfont files it @font-faces.
+# FontAwesome: keep the aggregate CSS + only the fa-* icon webfonts it @font-faces.
+# (The webfonts/ folder in this bundle also contains many unrelated text fonts —
+# Cairo, Inter, Noto, Tajawal, … — which the app does not use; keep them ignored.)
 assets/fontawesome-free-v7.3.1-web/**
 !assets/fontawesome-free-v7.3.1-web/css/
 !assets/fontawesome-free-v7.3.1-web/css/all.min.css
 !assets/fontawesome-free-v7.3.1-web/webfonts/
-!assets/fontawesome-free-v7.3.1-web/webfonts/*.woff2
+!assets/fontawesome-free-v7.3.1-web/webfonts/fa-*.woff2

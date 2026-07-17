@@ -1,0 +1,27 @@
+# Line-ending policy. This repo is developed on Windows with core.autocrlf=true,
+# which will corrupt binary assets that git misdetects as text (e.g. some woff2
+# files without early NUL bytes). Force binary asset types to be stored verbatim.
+
+# Text files: normalize to LF in the repo, checkout native.
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+
+# Minified vendor JS: keep byte-exact, never eol-convert.
+*.min.js binary
+
+# Binary assets: never apply eol/diff/merge conversion.
+*.woff2 binary
+*.woff  binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
