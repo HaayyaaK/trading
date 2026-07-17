@@ -71,7 +71,10 @@ function renderChrome() {
   $('#btn-ar').classList.toggle('active', L === 'ar');
   $('#btn-en').classList.toggle('active', L === 'en');
   const themeBtn = $('#btn-theme');
-  themeBtn.textContent = appState.theme === 'dark' ? '☀' : '☾';
+  // FontAwesome sun/moon; show the icon of the mode you'd switch TO
+  themeBtn.innerHTML = appState.theme === 'dark'
+    ? '<i class="fa-solid fa-sun" aria-hidden="true"></i>'
+    : '<i class="fa-solid fa-moon" aria-hidden="true"></i>';
   themeBtn.title = T(appState.theme === 'dark' ? 'themeToLight' : 'themeToDark');
 
   const badge = $('#status-badge');
@@ -405,86 +408,142 @@ function renderNews() {
   box.innerHTML = avg + `<div class="news-list">${items}</div>`;
 }
 
-function chartTheme() {
+// Charts are drawn with Apache ECharts (local vendor build). Colors are pulled
+// from the active CSS theme tokens on every render, and renderCharts() is called
+// from renderAll() on theme toggle, so charts re-theme correctly in dark/light
+// (not just the DOM around them). ECharts instances are disposed and re-created
+// each render, which guarantees the fresh palette is applied.
+function chartColors() {
   return {
-    text: cssVar('--text-2'), grid: cssVar('--grid-line'),
+    text: cssVar('--text-2'), text3: cssVar('--text-3'), grid: cssVar('--grid-line'),
     accent: cssVar('--accent'), bull: cssVar('--bull'), bear: cssVar('--bear'), neut: cssVar('--neut'),
+    card: cssVar('--card'), border: cssVar('--border'),
   };
+}
+function hexA(hex, a) {
+  const h = hex.replace('#', '').trim();
+  if (h.length < 3) return hex;
+  const f = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(f, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
 function destroyCharts() {
   for (const k of Object.keys(appState.charts)) {
-    if (appState.charts[k]) { appState.charts[k].destroy(); appState.charts[k] = null; }
+    if (appState.charts[k]) { appState.charts[k].dispose(); appState.charts[k] = null; }
   }
+}
+
+function echartsBase(th, labels) {
+  return {
+    animation: false,
+    grid: { left: 6, right: 10, top: 24, bottom: 6, containLabel: true },
+    xAxis: {
+      type: 'category', data: labels, boundaryGap: true,
+      axisLine: { lineStyle: { color: th.border } },
+      axisLabel: { color: th.text, fontSize: 10, hideOverlap: true },
+      axisTick: { show: false }, splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value', scale: true,
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: th.text, fontSize: 10 },
+      splitLine: { lineStyle: { color: th.grid } },
+    },
+    tooltip: {
+      trigger: 'axis', confine: true,
+      axisPointer: { type: 'cross', lineStyle: { color: th.text3 }, crossStyle: { color: th.text3 } },
+      backgroundColor: th.card, borderColor: th.border, textStyle: { color: th.text, fontSize: 11 },
+    },
+    textStyle: { fontFamily: 'IBM Plex Sans Arabic, sans-serif' },
+  };
 }
 
 function renderCharts() {
   $('#charts-title').textContent = appState.lang === 'ar' ? 'الرسوم المصغّرة' : 'Mini-charts';
-  // Skip drawing while the charts card is collapsed: Chart.js sizes to its
+  // Skip drawing while the charts card is collapsed: ECharts sizes to its
   // container, which is display:none when collapsed and would render at 0px.
   // The collapse toggle re-runs renderCharts() on expand, so sizing is correct.
   if (cardCollapsed('charts')) return;
   const s = appState.series;
   destroyCharts();
-  const priceT = $('#chart-price-t'), volT = $('#chart-volume-t'), vlyT = $('#chart-volatility-t');
-  priceT.textContent = T('chartPrice'); volT.textContent = T('chartVolume'); vlyT.textContent = T('chartVolatility');
-  if (!s || typeof Chart === 'undefined') return;
-  const th = chartTheme();
+  $('#chart-price-t').textContent = T('chartPrice');
+  $('#chart-volume-t').textContent = T('chartVolume');
+  $('#chart-volatility-t').textContent = T('chartVolatility');
+  if (!s || typeof echarts === 'undefined') return;
+  const th = chartColors();
   const N = 120;
-  const candles = s.candles;
-  const cl = candles.map((c) => c.c);
+  const full = s.candles;
+  const cl = full.map((c) => c.c);
+  const candles = full.slice(-N);
   // label granularity by timeframe: 1h -> HH:MM; 4h/8h/12h -> MM-DD HH:MM
   // (same intraday clock recurs across days, so the date is needed); 1d -> MM-DD
   const tf = s.meta.timeframe;
-  const labels = candles.slice(-N).map((c) => {
+  const labels = candles.map((c) => {
     const iso = new Date(c.t).toISOString();
     if (tf === '1h') return iso.slice(11, 16);
     if (tf === '1d') return iso.slice(5, 10);
     return iso.slice(5, 10) + ' ' + iso.slice(11, 16);
   });
-  const base = {
-    responsive: true, animation: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { color: th.text, maxTicksLimit: 6, font: { size: 10 } }, grid: { color: th.grid } },
-      y: { ticks: { color: th.text, font: { size: 10 } }, grid: { color: th.grid } },
-    },
-  };
-  // price + EMA50 + KAMA
-  const e50 = ema(cl, 50).slice(-N), km = kama(cl, 10, 2, 30).slice(-N);
-  appState.charts.price = new Chart($('#chart-price'), {
-    type: 'line',
-    data: { labels, datasets: [
-      { data: cl.slice(-N), borderColor: th.accent, borderWidth: 1.8, pointRadius: 0, tension: .25 },
-      { data: e50, borderColor: th.bull, borderWidth: 1.1, pointRadius: 0, tension: .25 },
-      { data: km, borderColor: th.neut, borderWidth: 1.1, pointRadius: 0, tension: .25, borderDash: [4, 3] },
-    ] },
-    options: base,
-  });
-  // volume (real volume only — never fabricated)
+  const e50 = ema(cl, 50).slice(-N);
+  const km = kama(cl, 10, 2, 30).slice(-N);
+
+  // --- Price: real candlesticks for OHLC series (crypto/gold), a line for
+  //     close-only series (forex/silver) where candlesticks would be dojis.
+  const priceInst = echarts.init($('#chart-price'));
+  const priceOpt = echartsBase(th, labels);
+  priceOpt.legend = { data: ['EMA50', 'KAMA'], top: 0, right: 6, textStyle: { color: th.text, fontSize: 10 }, itemWidth: 16, itemHeight: 8 };
+  const overlays = [
+    { name: 'EMA50', type: 'line', data: e50, showSymbol: false, smooth: true, lineStyle: { width: 1.4, color: th.accent }, z: 3 },
+    { name: 'KAMA', type: 'line', data: km, showSymbol: false, smooth: true, lineStyle: { width: 1.4, color: th.neut, type: 'dashed' }, z: 3 },
+  ];
+  if (s.meta.ohlc) {
+    priceOpt.series = [
+      { name: 'OHLC', type: 'candlestick', data: candles.map((c) => [c.o, c.c, c.l, c.h]),
+        itemStyle: { color: th.bull, color0: th.bear, borderColor: th.bull, borderColor0: th.bear }, z: 2 },
+      ...overlays,
+    ];
+  } else {
+    priceOpt.series = [
+      { name: 'Close', type: 'line', data: candles.map((c) => c.c), showSymbol: false, smooth: true,
+        lineStyle: { width: 1.8, color: th.accent },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: hexA(th.accent, .28) }, { offset: 1, color: hexA(th.accent, 0) }]) }, z: 2 },
+      ...overlays,
+    ];
+  }
+  priceInst.setOption(priceOpt);
+  appState.charts.price = priceInst;
+
+  // --- Volume: real volume only, colored by candle direction. Never fabricated.
   if (s.meta.hasVolume) {
     $('#chart-volume').style.display = '';
     $('#chart-volume-na').style.display = 'none';
-    const vols = candles.slice(-N).map((c) => c.v);
-    const colors = candles.slice(-N).map((c) => (c.c >= c.o ? th.bull : th.bear));
-    appState.charts.volume = new Chart($('#chart-volume'), {
-      type: 'bar',
-      data: { labels, datasets: [{ data: vols, backgroundColor: colors }] },
-      options: base,
-    });
+    const volInst = echarts.init($('#chart-volume'));
+    const volOpt = echartsBase(th, labels);
+    volOpt.series = [{
+      type: 'bar', barWidth: '62%',
+      data: candles.map((c) => ({ value: c.v, itemStyle: { color: hexA(c.c >= c.o ? th.bull : th.bear, .8) } })),
+    }];
+    volInst.setOption(volOpt);
+    appState.charts.volume = volInst;
   } else {
     $('#chart-volume').style.display = 'none';
     const na = $('#chart-volume-na');
     na.style.display = '';
     na.textContent = T('chartVolumeNA');
   }
-  // volatility: BB width
-  const bw = bollinger(cl, 20, 2).width.slice(-N).map((x) => (x === null ? null : x * 100));
-  appState.charts.volatility = new Chart($('#chart-volatility'), {
-    type: 'line',
-    data: { labels, datasets: [{ data: bw, borderColor: th.bear, borderWidth: 1.4, pointRadius: 0, tension: .25, fill: { target: 'origin', above: cssVar('--bear-soft') } }] },
-    options: base,
-  });
+
+  // --- Volatility: Bollinger band width (%) with a gradient area.
+  const bw = bollinger(cl, 20, 2).width.slice(-N).map((x) => (x === null ? null : +(x * 100).toFixed(3)));
+  const vlyInst = echarts.init($('#chart-volatility'));
+  const vlyOpt = echartsBase(th, labels);
+  vlyOpt.series = [{
+    type: 'line', data: bw, showSymbol: false, smooth: true, connectNulls: false,
+    lineStyle: { width: 1.6, color: th.bear },
+    areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: hexA(th.bear, .35) }, { offset: 1, color: hexA(th.bear, 0) }]) },
+  }];
+  vlyInst.setOption(vlyOpt);
+  appState.charts.volatility = vlyInst;
 }
 
 function renderReport() {
@@ -574,7 +633,9 @@ function cardSection(name) { return document.querySelector(`.card[data-card="${n
 function cardCollapsed(name) { const s = cardSection(name); return !!s && s.classList.contains('collapsed'); }
 
 function setupCollapsibleCards() {
-  const chevron = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  // FontAwesome caret; expanded = down, collapsed = up (CSS rotate). Up/down
+  // only — never left/right — so the direction reads the same in RTL and LTR.
+  const chevron = '<i class="fa-solid fa-caret-down" aria-hidden="true"></i>';
   document.querySelectorAll('.card .card-head').forEach((head) => {
     head.appendChild(el('span', 'card-chevron', chevron));
     head.setAttribute('role', 'button');
@@ -596,6 +657,16 @@ function setupCollapsibleCards() {
 
 function initUi() {
   setupCollapsibleCards();
+  // ECharts is not auto-responsive; resize instances on viewport change.
+  let resizeRaf = null;
+  window.addEventListener('resize', () => {
+    if (resizeRaf) cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(() => {
+      for (const k of Object.keys(appState.charts)) {
+        if (appState.charts[k]) appState.charts[k].resize();
+      }
+    });
+  });
   $('#btn-ar').addEventListener('click', () => { appState.lang = 'ar'; renderAll(); });
   $('#btn-en').addEventListener('click', () => { appState.lang = 'en'; renderAll(); });
   $('#btn-theme').addEventListener('click', () => {

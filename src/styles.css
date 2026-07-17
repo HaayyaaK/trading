@@ -63,17 +63,24 @@
 
 html { scroll-behavior: smooth; }
 
+/* Type system: two dual-script families (each covers Arabic + Latin with
+   matched metrics), so no per-language font switching is needed.
+   --font-body: IBM Plex Sans Arabic (content); --font-title: Readex Pro
+   (card titles, brand, headings) — distinct but harmonious. */
+:root {
+  --font-body: "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  --font-title: "Readex Pro", "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+}
+
 body {
   background: var(--bg);
   color: var(--text-1);
-  font-family: var(--font-stack);
+  font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.55;
   min-height: 100vh;
   transition: background .35s ease, color .35s ease;
 }
-:root[lang="ar"] body { --font-stack: "Cairo", "Segoe UI", system-ui, sans-serif; }
-:root[lang="en"] body { --font-stack: "Inter", "Segoe UI", system-ui, sans-serif; }
 
 /* numerals keep Latin glyphs in both languages (financial convention) */
 .num, td.num, .price { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
@@ -92,7 +99,7 @@ header.site {
   display: grid; place-items: center; color: var(--accent-ink);
   box-shadow: var(--shadow);
 }
-.brand h1 { font-size: 21px; font-weight: 800; letter-spacing: .2px; }
+.brand h1 { font-family: var(--font-title); font-size: 21px; font-weight: 700; letter-spacing: .2px; }
 .brand p { font-size: 12.5px; color: var(--text-2); }
 .head-tools { margin-inline-start: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -132,7 +139,8 @@ header.site {
   transition: background .35s ease, border-color .35s ease;
 }
 .card h2 {
-  font-size: 15px; font-weight: 800; letter-spacing: .3px; color: var(--text-1);
+  font-family: var(--font-title);
+  font-size: 15.5px; font-weight: 600; letter-spacing: .2px; color: var(--text-1);
   display: flex; align-items: center; gap: 10px; margin-block-end: 14px;
 }
 .card h2::before {
@@ -153,6 +161,9 @@ header.site {
 }
 .card-head:hover .card-chevron { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 .card-chevron svg { inline-size: 15px; block-size: 15px; display: block; }
+.card-chevron i { font-size: 15px; line-height: 1; }
+/* expanded = caret down, collapsed = caret up (rotate 180°). Up/down only,
+   never left/right, so the direction reads identically in RTL and LTR. */
 .card.collapsed .card-chevron { transform: rotate(180deg); }
 /* collapsing hides the body wrapper; the header stays interactive */
 .card.collapsed > .card-body { display: none; }
@@ -274,8 +285,10 @@ table.levels td.num { font-weight: 700; color: var(--text-1); }
 
 /* ---------- charts ---------- */
 .chart-box { background: var(--card-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-block-start: 12px; }
-.chart-box .t { font-size: 12px; font-weight: 700; color: var(--text-2); margin-block-end: 6px; }
-.chart-box canvas { max-block-size: 170px; }
+.chart-box .t { font-family: var(--font-title); font-size: 12px; font-weight: 600; color: var(--text-2); margin-block-end: 6px; }
+/* ECharts renders into this div; it needs an explicit height */
+.echart { inline-size: 100%; block-size: 200px; }
+#chart-price.echart { block-size: 230px; }
 .chart-na { font-size: 12px; color: var(--text-3); padding: 20px 0; text-align: center; }
 
 /* ---------- layout ---------- */

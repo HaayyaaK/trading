@@ -60,6 +60,27 @@ and so surface as CORS errors. `fetchNews` now enforces a shared 6s request
 spacing + exponential failure backoff (30s→…→10min cap), serving stale cache or
 an explicit unavailable state — never fabricated headlines.
 
+### Charting library = Apache ECharts, not Chart.js (2026-07, Track 4)
+Switched charts from the Chart.js CDN to a **local vendor build of Apache
+ECharts 6.1.0** (`assets/echarts-v6.1.0/dist/echarts.min.js`). Both libraries
+were provided in `assets/`, but **Chart.js's local copy has no built `dist/`**
+(source checkout only), while ECharts ships a ready minified build — and ECharts
+gives real candlesticks, which is a genuine upgrade for a trading dashboard.
+Price chart is a **candlestick** for OHLC series (crypto/gold) and a **line**
+for close-only series (forex/silver, where candles would be dojis). Charts pull
+colors from the active CSS theme tokens each render and are disposed+re-created
+on theme toggle, so they re-theme correctly in dark/light. FontAwesome 7.3.1 is
+also local (`assets/fontawesome-free-.../css/all.min.css`). No chart/icon CDN
+remains; the only remaining third-party origin is Google Fonts (see below).
+
+### Fonts: dual-script families, no per-language switching (2026-07, Track 4)
+Replaced the Cairo(Arabic)+Inter(Latin) pair with two families that each cover
+Arabic AND Latin with matched metrics, so there is no per-language font switch:
+**IBM Plex Sans Arabic** for body/content, **Readex Pro** for titles/brand
+(distinct but harmonious). Still served from Google Fonts (the Track 4 "local"
+requirement covered FontAwesome + the charting library, not fonts). If fonts
+must also go offline/local later, self-host these two families under `assets/`.
+
 ### Timeframe availability is per-asset-class (2026-07, Track 2)
 Timeframe selector (1h/4h/8h/12h/1d) applies only to Binance-sourced instruments
 (crypto + gold proxy), verified to return ≥250 candles at every interval (EMA-200

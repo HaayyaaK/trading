@@ -20,7 +20,9 @@ const inline = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[
 check('7 inline script blocks', inline.length === 7, `${inline.length}`);
 check('no src/ references', !/(?:src|href)="src\//.test(html));
 check('no TODO/placeholder/stub markers', !/TODO|FIXME|placeholder|not implemented|stub\b/i.test(html));
-check('single external script (Chart.js CDN)', (html.match(/<script src=/g) || []).length === 1);
+// one external script: the local ECharts vendor build (FontAwesome is a <link>)
+check('single external script (local ECharts)', (html.match(/<script src=/g) || []).length === 1);
+check('vendor libs are local (assets/), not CDN', /src="assets\/echarts/.test(html) && /href="assets\/fontawesome/.test(html) && !/cdn\.jsdelivr|unpkg/.test(html));
 
 // ---- run the deliverable's own code in a vm ---------------------------------
 const sb = { console, Math, JSON, Object, Array, Number, String, Date, Infinity, NaN };
