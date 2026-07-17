@@ -1,0 +1,17 @@
+# OS / editor
+desktop.ini
+Thumbs.db
+.vscode/
+*.swp
+
+# Node / Python tooling
+node_modules/
+__pycache__/
+*.pyc
+
+# generated artifacts (rebuilt by tests / tools)
+test/mine.json
+tools/seeds.json
+
+# stray pre-existing file (inert duplicate of this ignore file, kept on disk)
+gitignore

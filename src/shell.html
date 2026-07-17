@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مِرصاد الأسواق — Market Mirsad</title>
+<!-- Fonts: Cairo (Arabic) + Inter (Latin). Chart.js does real work (three charts). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M3 17 8 10l4 4 6-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="18" cy="5" r="2" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <h1 id="app-title"></h1>
+        <p id="app-subtitle"></p>
+      </div>
+    </div>
+    <div class="head-tools">
+      <span id="status-badge" class="status-badge"><span class="dot"></span></span>
+      <div class="pill-toggle" role="group" aria-label="language">
+        <button id="btn-ar" type="button">عربي</button>
+        <button id="btn-en" type="button">EN</button>
+      </div>
+      <button id="btn-theme" class="icon-btn" type="button" aria-label="theme"></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2 id="selection-title"></h2>
+      <div class="selection-grid">
+        <div class="field"><label id="label-class" for="sel-class"></label><select id="sel-class"></select></div>
+        <div class="field"><label id="label-instrument" for="sel-instrument"></label><select id="sel-instrument"></select></div>
+        <div><button id="btn-run" class="btn-primary" type="button"></button></div>
+      </div>
+      <div class="hint" id="auto-note"></div>
+    </section>
+
+    <section class="card">
+      <h2 id="reading-title"></h2>
+      <div id="reading-body"></div>
+    </section>
+
+    <section class="card">
+      <h2 id="report-title"></h2>
+      <div id="report-body"></div>
+    </section>
+
+    <div class="two-col">
+      <div class="col">
+        <section class="card">
+          <h2 id="tiers-title"></h2>
+          <div id="tiers-body"></div>
+        </section>
+        <section class="card">
+          <h2 id="indicators-title"></h2>
+          <div id="indicators-body"></div>
+        </section>
+        <section class="card">
+          <h2 id="levels-title"></h2>
+          <div id="levels-body"></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="card">
+          <h2 id="news-title"></h2>
+          <div id="news-body"></div>
+        </section>
+        <section class="card">
+          <h2 id="charts-title"></h2>
+          <div class="chart-box"><div class="t" id="chart-price-t"></div><canvas id="chart-price"></canvas></div>
+          <div class="chart-box"><div class="t" id="chart-volume-t"></div><canvas id="chart-volume"></canvas><div class="chart-na" id="chart-volume-na" style="display:none"></div></div>
+          <div class="chart-box"><div class="t" id="chart-volatility-t"></div><canvas id="chart-volatility"></canvas></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site">
+    <span id="footer-sources"></span>
+    <span id="footer-disclaimer"></span>
+  </footer>
+</div>
+
+<script src="src/seeds.js"></script>
+<script src="src/data.js"></script>
+<script src="src/indicators.js"></script>
+<script src="src/analysis.js"></script>
+<script src="src/i18n.js"></script>
+<script src="src/report.js"></script>
+<script src="src/ui.js"></script>
+</body>
+</html>
