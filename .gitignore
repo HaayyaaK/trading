@@ -15,3 +15,9 @@ tools/seeds.json
 
 # stray pre-existing file (inert duplicate of this ignore file, kept on disk)
 gitignore
+
+# Local vendor libraries live in assets/ but are large source trees; Track 4
+# will commit only the specific dist files it wires in, not the whole trees.
+assets/Chart.js-v4.5.1/
+assets/echarts-v6.1.0/
+assets/fontawesome-free-v7.3.1-web/

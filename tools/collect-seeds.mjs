@@ -53,7 +53,7 @@ const [xag, xau] = [await metalDaily('xag', dates), await metalDaily('xau', date
 // Frankfurter: full daily EUR-based series in one call; crosses computed client-side.
 const start = dates[dates.length - 1];
 const fx = await fetchJson(
-  `https://api.frankfurter.dev/v1/${start}..?base=EUR&symbols=USD,JPY,GBP,AUD`
+  `https://api.frankfurter.dev/v1/${start}..?base=EUR&symbols=USD,JPY,GBP,AUD,NZD,CAD,CHF`
 );
 
 // Binance compact last-known snapshots (last 60 hourly candles per symbol).
@@ -78,6 +78,9 @@ const forex = {
   USDJPY: pair((r) => r.JPY / r.USD),
   GBPJPY: pair((r) => r.JPY / r.GBP),
   AUDUSD: pair((r) => r.USD / r.AUD),
+  NZDUSD: pair((r) => r.USD / r.NZD),
+  USDCAD: pair((r) => r.CAD / r.USD),
+  USDCHF: pair((r) => r.CHF / r.USD),
 };
 
 const seeds = {

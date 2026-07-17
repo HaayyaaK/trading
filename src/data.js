@@ -34,6 +34,9 @@ const INSTRUMENTS = {
     { id: 'GBPJPY', labelEn: 'GBP/JPY', labelAr: 'استرليني/ين GBP/JPY', decimals: 2, timeframe: '1d', source: 'frankfurter', newsQuery: '(pound yen OR gbpjpy OR bank of england)' },
     { id: 'USDJPY', labelEn: 'USD/JPY', labelAr: 'دولار/ين USD/JPY', decimals: 2, timeframe: '1d', source: 'frankfurter', newsQuery: '(dollar yen OR usdjpy OR bank of japan)' },
     { id: 'AUDUSD', labelEn: 'AUD/USD', labelAr: 'أسترالي/دولار AUD/USD', decimals: 4, timeframe: '1d', source: 'frankfurter', newsQuery: '(australian dollar OR audusd OR rba)' },
+    { id: 'NZDUSD', labelEn: 'NZD/USD', labelAr: 'نيوزيلندي/دولار NZD/USD', decimals: 4, timeframe: '1d', source: 'frankfurter', newsQuery: '(new zealand dollar OR nzdusd OR rbnz)' },
+    { id: 'USDCAD', labelEn: 'USD/CAD', labelAr: 'دولار/كندي USD/CAD', decimals: 4, timeframe: '1d', source: 'frankfurter', newsQuery: '(canadian dollar OR usdcad OR bank of canada)' },
+    { id: 'USDCHF', labelEn: 'USD/CHF', labelAr: 'دولار/فرنك USD/CHF', decimals: 4, timeframe: '1d', source: 'frankfurter', newsQuery: '(swiss franc OR usdchf OR snb)' },
   ],
   commodities: [
     // Gold candles come from Binance PAXGUSDT (PAX Gold, a token redeemable for
@@ -102,11 +105,15 @@ const FX_PAIR_CALC = {
   USDJPY: (r) => r.JPY / r.USD,
   GBPJPY: (r) => r.JPY / r.GBP,
   AUDUSD: (r) => r.USD / r.AUD,
+  NZDUSD: (r) => r.USD / r.NZD,
+  USDCAD: (r) => r.CAD / r.USD,
+  USDCHF: (r) => r.CHF / r.USD,
 };
+const FX_SYMBOLS = 'USD,JPY,GBP,AUD,NZD,CAD,CHF';
 
 async function fetchForexHistory(pairId) {
   const start = new Date(Date.now() - 330 * 864e5).toISOString().slice(0, 10);
-  const j = await getJson(`https://api.frankfurter.dev/v1/${start}..?base=EUR&symbols=USD,JPY,GBP,AUD`);
+  const j = await getJson(`https://api.frankfurter.dev/v1/${start}..?base=EUR&symbols=${FX_SYMBOLS}`);
   const days = Object.keys(j.rates || {}).sort();
   if (days.length < 200) throw new Error('short frankfurter series');
   const calc = FX_PAIR_CALC[pairId];
@@ -134,12 +141,15 @@ async function fetchForexLatest(pairId) {
   // open.er-api.com publishes one USD-based rate set per day (hourly edge cache).
   const j = await getJson('https://open.er-api.com/v6/latest/USD');
   const r = j && j.rates;
-  if (!r || !r.EUR || !r.JPY || !r.GBP || !r.AUD) throw new Error('bad er-api payload');
+  if (!r || !r.EUR || !r.JPY || !r.GBP || !r.AUD || !r.NZD || !r.CAD || !r.CHF) throw new Error('bad er-api payload');
   const calcFromUsd = {
     EURUSD: () => 1 / r.EUR,
     USDJPY: () => r.JPY,
     GBPJPY: () => r.JPY / r.GBP,
     AUDUSD: () => 1 / r.AUD,
+    NZDUSD: () => 1 / r.NZD,
+    USDCAD: () => r.CAD,
+    USDCHF: () => r.CHF,
   }[pairId];
   const dateStr = new Date((j.time_last_update_unix || Date.now() / 1000) * 1000)
     .toISOString().slice(0, 10);

@@ -43,8 +43,9 @@ function fmtSigned(n, decimals) {
 }
 function fmtTime(ms, lang) {
   if (!ms) return '—';
-  return new Date(ms).toLocaleTimeString(lang === 'ar' ? 'ar' : 'en-GB',
-    { hour: '2-digit', minute: '2-digit', second: '2-digit', numberingSystem: 'latn' });
+  // 12-hour "h:mm AM/PM" on the status badge; Western numerals in both languages
+  return new Date(ms).toLocaleTimeString('en-US',
+    { hour: 'numeric', minute: '2-digit', hour12: true, numberingSystem: 'latn' });
 }
 
 const T = (key) => t(appState.lang, key);
