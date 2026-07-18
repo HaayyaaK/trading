@@ -137,6 +137,16 @@ header.site {
 .status-badge.is-live { color: var(--bull); border-color: color-mix(in srgb, var(--bull) 35%, var(--border)); }
 .status-badge.is-stale .dot { background: var(--warn); }
 .status-badge.is-stale { color: var(--warn); }
+/* Countdown to the next automatic poll: a visually secondary chip (muted
+   color, smaller size, thin divider) so it doesn't compete with the primary
+   status text/live clock already in the badge. */
+.badge-countdown {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-inline-start: var(--sp-1); padding-inline-start: var(--sp-2);
+  border-inline-start: 1px solid var(--border-strong);
+  color: var(--text-3); font-size: var(--fs-2xs); font-weight: 600;
+}
+.badge-countdown i { font-size: 10px; }
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 var(--bull-soft);} 50% { box-shadow: 0 0 0 6px var(--bull-soft);} }
 
 .pill-toggle {
@@ -170,6 +180,22 @@ header.site {
 .card h2::before {
   content: ""; inline-size: 5px; block-size: 18px; border-radius: 3px;
   background: var(--accent); flex: none;
+}
+
+/* ---------- always-on cards (asset selection + current market reading) ----
+   These two never collapse (no toggle is even attached — see
+   setupCollapsibleCards) and get a distinct, intentional treatment so they
+   read as the "always visible, most important" cards: a subtle accent-tinted
+   gradient plus an accent-tinted border. Built entirely from existing theme
+   tokens via color-mix(), the same pattern already used for the brand mark
+   and the live status badge, so it re-themes automatically. */
+.card[data-card="selection"], .card[data-card="reading"] {
+  background: linear-gradient(160deg, var(--card) 30%, color-mix(in srgb, var(--accent) 20%, var(--card)));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.card[data-card="selection"] .card-head, .card[data-card="reading"] .card-head {
+  cursor: default;
 }
 
 /* ---------- collapsible cards ---------- */
@@ -348,7 +374,24 @@ main { display: flex; flex-direction: column; gap: var(--gap-card); }
    two sides drift to unequal total heights before. */
 .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-card); align-items: stretch; }
 
-footer.site { margin-block-start: var(--sp-6); color: var(--text-3); font-size: var(--fs-xs); display: flex; flex-direction: column; gap: var(--sp-1); }
+footer.site {
+  margin-block-start: var(--sp-6); padding-block-start: var(--sp-5);
+  border-block-start: 1px solid var(--border);
+  color: var(--text-3); font-size: var(--fs-xs);
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); text-align: center;
+}
+/* Same-tab link to disclaimer.html (see report: chosen over an in-page swap
+   to keep the legal text single-sourced in one file, and over a new tab so
+   it stays "within the current page context" per the request). */
+.footer-link {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  color: var(--text-2); text-decoration: none; font-weight: 700; font-size: var(--fs-xs);
+  padding: var(--sp-1) var(--sp-4); border: 1px solid var(--border); border-radius: var(--radius-pill);
+  background: var(--card-2); transition: color .2s, border-color .2s, background .2s;
+}
+.footer-link:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.footer-link i { font-size: var(--fs-sm); }
+.footer-copyright { font-size: var(--fs-2xs); color: var(--text-3); }
 
 .skeleton { border-radius: var(--radius-control); background: linear-gradient(90deg, var(--card-2) 25%, var(--bg-raise) 50%, var(--card-2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; min-block-size: 90px; }
 @keyframes shimmer { to { background-position: -200% 0; } }

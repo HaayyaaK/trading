@@ -139,7 +139,9 @@ const i18n = {
     dataUnavailable: 'تعذّر الوصول للمصدر — تُعرض آخر قيم معروفة',
     footerSources: 'المصادر: Binance · Frankfurter (ECB) · open.er-api · gold-api · GDELT — بدون مفاتيح، بدون وسطاء CORS.',
     footerDisclaimer: 'أداة تحليل وتصوّر بيانات فقط. لا تُقدّم توصيات ولا إشارات تداول.',
+    footerDisclaimerLink: 'إخلاء المسؤولية الكامل',
     dataAsOf: 'البيانات حتى',
+    nextPollTitle: 'الوقت المتبقي حتى التحديث التلقائي التالي',
   },
   en: {
     appTitle: 'Market Mirsad',
@@ -276,7 +278,9 @@ const i18n = {
     dataUnavailable: 'Source unreachable — showing last known values',
     footerSources: 'Sources: Binance · Frankfurter (ECB) · open.er-api · gold-api · GDELT — no keys, no CORS proxies.',
     footerDisclaimer: 'An analysis and visualization tool only. It does not produce recommendations or trade signals.',
+    footerDisclaimerLink: 'Full disclaimer',
     dataAsOf: 'Data as of',
+    nextPollTitle: 'Time remaining until the next automatic update',
   },
 };
 

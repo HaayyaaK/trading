@@ -172,7 +172,14 @@ const T = {
   },
 };
 
-const state = { lang: 'ar', theme: 'dark' };
+// Defaults match the dashboard's own defaults; if arriving from the
+// dashboard's footer link, ?lang=&theme= carry over its current state so the
+// transition feels continuous instead of resetting to ar/dark.
+const params = new URLSearchParams(location.search);
+const state = {
+  lang: params.get('lang') === 'en' ? 'en' : 'ar',
+  theme: params.get('theme') === 'light' ? 'light' : 'dark',
+};
 
 function render() {
   const t = T[state.lang];

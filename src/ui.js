@@ -22,6 +22,7 @@ const appState = {
   newsForId: null,       // which instrument the cached news belongs to
   lastUpdateAt: null,    // ms epoch of last successful data event (not render)
   pollTimer: null,
+  nextPollAt: null,      // ms epoch when the next poll is scheduled (null = not polling)
   charts: { price: null, volume: null, volatility: null },
 };
 
@@ -85,8 +86,17 @@ function renderChrome() {
     if (appState.series && appState.series.meta.live) { key = 'statusLive'; badge.classList.add('is-live'); }
     else { key = 'statusStale'; badge.classList.add('is-stale'); }
   }
+  // Countdown container presence depends only on appState.nextPollAt !== null
+  // (state, not the wall clock) — keeps renderChrome() a pure projection of
+  // state. The live seconds value itself is filled in by tickCountdown(),
+  // called once right after this render and then every second afterward; see
+  // that function for why the clock read is kept out of the render path.
+  const countdownHtml = appState.nextPollAt !== null
+    ? `<span class="badge-countdown" title="${T('nextPollTitle')}"><i class="fa-regular fa-clock" aria-hidden="true"></i><span class="num" id="poll-countdown"></span></span>`
+    : '';
   badge.innerHTML = `<span class="dot"></span><span>${T(key)}</span>` +
-    (appState.lastUpdateAt ? ` <span class="num" style="font-weight:600">${fmtTime(appState.lastUpdateAt, L)}</span>` : '');
+    (appState.lastUpdateAt ? ` <span class="num" style="font-weight:600">${fmtTime(appState.lastUpdateAt, L)}</span>` : '') +
+    countdownHtml;
 
   // selection card
   $('#selection-title').textContent = T('selectionTitle');
@@ -121,6 +131,14 @@ function renderChrome() {
 
   $('#footer-sources').textContent = T('footerSources');
   $('#footer-disclaimer').textContent = T('footerDisclaimer');
+  $('#footer-disclaimer-link-text').textContent = T('footerDisclaimerLink');
+  // Same-tab navigation to disclaimer.html (see report: chosen over an
+  // in-page content swap to avoid a second copy of the legal text living in
+  // two files, and over a new tab so it stays within the current browsing
+  // context). Pass the current language/theme so the disclaimer page opens
+  // in a matching state instead of resetting to its own ar/dark default.
+  $('#footer-disclaimer-link').setAttribute('href', `disclaimer.html?lang=${L}&theme=${appState.theme}`);
+  $('#footer-copyright').textContent = `© ${new Date().getFullYear()} ${T('appTitle')}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -673,6 +691,7 @@ function renderAll() {
   renderCharts();
   renderTrendDuration();
   renderGauges();
+  tickCountdown(); // fill the countdown chip renderChrome() just created; see its comment
 }
 
 // ---------------------------------------------------------------------------
@@ -680,6 +699,29 @@ function renderAll() {
 // ---------------------------------------------------------------------------
 function stopPolling() {
   if (appState.pollTimer) { clearInterval(appState.pollTimer); appState.pollTimer = null; }
+  appState.nextPollAt = null;
+}
+
+// Countdown to the next automatic poll, based on the SAME pollIntervalMs(inst)
+// the active poll timer was actually scheduled with (see startPolling) — so
+// it's always accurate for whichever instrument is currently running, and
+// resets the moment a poll actually occurs (each tick recomputes it below).
+// Deliberately reads the wall clock, so — per this file's determinism
+// contract (top of file) — it is kept OUT of renderChrome()/renderAll() and
+// lives only here, called once right after each render (to fill the just-
+// rendered countdown chip with no visible gap) and every second afterward
+// from its own timer started in initUi().
+function pollCountdownText() {
+  if (!appState.nextPollAt) return null;
+  const totalSec = Math.max(0, Math.ceil((appState.nextPollAt - Date.now()) / 1000));
+  const m = Math.floor(totalSec / 60), s = totalSec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+function tickCountdown() {
+  const el = document.getElementById('poll-countdown');
+  if (!el) return;
+  const text = pollCountdownText();
+  if (text !== null) el.textContent = text;
 }
 
 async function runFlow() {
@@ -703,12 +745,17 @@ async function runFlow() {
     // loadSeries never throws by contract; this is a belt-and-braces guard
     appState.phase = 'ready';
   }
-  renderAll();
+  // start polling BEFORE the render below, so appState.nextPollAt is already
+  // set (to THIS instrument's interval) by the time renderChrome() decides
+  // whether to show the countdown chip at all — otherwise the chip wouldn't
+  // appear until the first poll tick fires, up to pollIntervalMs later.
   startPolling(inst);
+  renderAll();
 }
 
 function startPolling(inst) {
   stopPolling();
+  appState.nextPollAt = Date.now() + pollIntervalMs(inst);
   appState.pollTimer = setInterval(async () => {
     if (!appState.series || appState.phase !== 'ready') return;
     const res = await pollTick(inst, appState.series);
@@ -725,6 +772,7 @@ function startPolling(inst) {
       if (news.ok) { appState.news = news; items = news.items; }
     } catch (e) { /* keep previous news */ }
     appState.analysis = runAnalysis(appState.series, items);
+    appState.nextPollAt = Date.now() + pollIntervalMs(inst); // reset for the next cycle
     renderAll();
   }, pollIntervalMs(inst));
 }
@@ -732,14 +780,18 @@ function startPolling(inst) {
 // ---------------------------------------------------------------------------
 // Wiring
 // ---------------------------------------------------------------------------
+// Collapsible cards — every card header toggles its body, EXCEPT asset
+// selection + current market reading, which are always-on: no chevron, no
+// role/tabindex, no click/keydown listener is ever attached for them, so
+// there is no interaction path (mouse or keyboard) that can collapse them —
+// not just "permanently expanded with a dead button still showing." Their
+// distinct visual treatment lives in styles.css (accent-tinted gradient +
+// border). Every other card starts collapsed. Collapse state lives as a
+// class on the static .card element, so it survives renderAll() (which only
+// rewrites body innerHTML) with no storage — session-only, reset on reload
+// (§4).
 // ---------------------------------------------------------------------------
-// Collapsible cards — every card header toggles its body. On load only the
-// first two cards (asset selection + current market reading) are expanded; the
-// rest start collapsed. Collapse state lives as a class on the static .card
-// element, so it survives renderAll() (which only rewrites body innerHTML) with
-// no storage — session-only, reset on reload (§4).
-// ---------------------------------------------------------------------------
-const EXPANDED_ON_LOAD = new Set(['selection', 'reading']);
+const ALWAYS_EXPANDED = new Set(['selection', 'reading']);
 function cardSection(name) { return document.querySelector(`.card[data-card="${name}"]`); }
 function cardCollapsed(name) { const s = cardSection(name); return !!s && s.classList.contains('collapsed'); }
 
@@ -749,15 +801,16 @@ function setupCollapsibleCards() {
   const chevron = '<i class="fa-solid fa-caret-down" aria-hidden="true"></i>';
   document.querySelectorAll('.card[data-card] .card-head').forEach((head) => {
     const section = head.closest('.card');
+    if (ALWAYS_EXPANDED.has(section.dataset.card)) {
+      section.classList.remove('collapsed'); // no chevron, no listeners, never collapsible
+      return;
+    }
     head.appendChild(el('span', 'card-chevron', chevron));
     head.setAttribute('role', 'button');
     head.setAttribute('tabindex', '0');
-    // default state: first two cards open, the rest collapsed
-    const startCollapsed = !EXPANDED_ON_LOAD.has(section.dataset.card);
-    section.classList.toggle('collapsed', startCollapsed);
-    head.setAttribute('aria-expanded', String(!startCollapsed));
+    section.classList.add('collapsed'); // every collapsible card starts collapsed
+    head.setAttribute('aria-expanded', 'false');
     const toggle = () => {
-      const section = head.closest('.card');
       const collapsed = section.classList.toggle('collapsed');
       head.setAttribute('aria-expanded', String(!collapsed));
       // charts must be (re)drawn at real size when their card becomes visible
@@ -772,6 +825,11 @@ function setupCollapsibleCards() {
 
 function initUi() {
   setupCollapsibleCards();
+  // Live countdown to the next poll: a dedicated 1s ticker, entirely outside
+  // renderAll()'s deterministic render path (see pollCountdownText()). Runs
+  // for the page's lifetime; a no-op whenever the countdown chip isn't
+  // present (idle, loading, or no active poll).
+  setInterval(tickCountdown, 1000);
   // ECharts is not auto-responsive; resize instances on viewport change.
   let resizeRaf = null;
   window.addEventListener('resize', () => {

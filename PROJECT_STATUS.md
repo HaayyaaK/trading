@@ -185,6 +185,44 @@ same-URL repeat gets collapsed. This matches the explicit design goal from the
 prior fix ("don't drop real distinct headlines that happen to share similar
 wording"). No dedup logic was changed.
 
+### Always-on cards, footer, and a poll countdown (2026-07)
+Three more changes:
+- **Asset Selection and Current Market Reading are now genuinely always-on** —
+  `setupCollapsibleCards()` skips them entirely (no chevron appended, no
+  `role`/`tabindex`, no click/keydown listener attached), not just "expanded
+  by default but still toggleable." Verified there is no interaction path,
+  mouse or keyboard, that can collapse them. They get a distinct accent-tinted
+  gradient + border (via `color-mix()` against existing tokens, the same
+  pattern already used for the brand mark and the live-status badge border),
+  strengthened after an initial pass looked too subtle in screenshots to
+  "read as intentional" — confirmed visually in both themes on the second try.
+- **Footer**: a disclaimer entry point (icon + short label) and a copyright
+  line. The disclaimer link is a **plain same-tab `<a href="disclaimer.html">`**
+  (no `target="_blank"`), chosen over an in-page content swap specifically to
+  avoid a second copy of the legal text living in two files — this project's
+  established discipline against duplicate sources of truth (data,
+  calculations, indicator labels/values) extends naturally to disclaimer copy
+  too. The link carries the current `?lang=&theme=` as query params so
+  disclaimer.html (updated to read them) opens in a matching state instead of
+  resetting to its own ar/dark default — verified same-tab navigation with a
+  Playwright test that confirms the *same* page object ends up on
+  `disclaimer.html` (not a popup/new tab) in the carried-over language/theme.
+- **Poll countdown** in the status badge: a compact `⏱ M:SS` chip, muted and
+  divider-separated from the existing live-status text/clock so it doesn't
+  compete for attention. Reflects `pollIntervalMs(inst)` for whichever
+  instrument is actually running. Deliberately kept OUT of
+  `renderChrome()`/`renderAll()` (this file's documented "pure projection of
+  state" render contract) — a dedicated `tickCountdown()` reads the wall
+  clock and does a targeted text update, called once right after each render
+  and every second from its own timer, so the existing DOM-determinism
+  guarantee for `renderAll()` is untouched (confirmed: the determinism check
+  in `browser-test.mjs` still passes unmodified). `startPolling()` now runs
+  *before* the post-load render in `runFlow()`, so the chip appears
+  immediately with the correct instrument's interval rather than waiting for
+  the first poll tick. Verified: no chip while idle; counts down in real
+  time; resets on an actual poll tick; switching instrument (e.g. crypto’s
+  20s → forex’s 300s) updates it immediately, not after a stale delay.
+
 ---
 
 ## Intentional exceptions to the original brief
