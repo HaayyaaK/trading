@@ -118,6 +118,9 @@ const i18n = {
     tdCensoredNote: 'الحالة مستمرة منذ بداية التاريخ المتاح، فقد تكون قد بدأت قبل ذلك — العدد هو الحد الأدنى المؤكَّد.',
     tdNa: 'غير متاح — يتطلب تاريخاً أطول',
 
+    gaugesTitle: 'مقاييس المؤشرات',
+    gaugesNote: 'تمثيل بصري لقراءات المؤشرات الحالية — وصفٌ لحالة البيانات، وليس إشارة تداول.',
+
     newsTitle: 'الأخبار وقراءة المشاعر',
     newsUnavailable: 'الأخبار غير متاحة حالياً — لن تُعرض قيم مُختلقة، والقراءة المركبة فنية فقط.',
     newsSentAvg: 'متوسط قراءة العناوين',
@@ -251,6 +254,9 @@ const i18n = {
     tdAtLeast: 'Duration ≥',
     tdCensoredNote: 'This state has held for the entire available history, so it may have begun earlier — the count shown is the confirmed minimum.',
     tdNa: 'n/a — requires longer history',
+
+    gaugesTitle: 'Indicator gauges',
+    gaugesNote: 'A visual snapshot of current indicator readings — a description of the data’s state, not a trading signal.',
 
     newsTitle: 'News & sentiment reading',
     newsUnavailable: 'News is currently unreachable — no fabricated values are shown; the combined reading is technical-only.',

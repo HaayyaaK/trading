@@ -161,6 +161,39 @@ function gaugeSvg(value) {
     ${ticks}${needle}</svg>`;
 }
 
+// Compact semicircle gauge for the Indicator Gauges card — same visual
+// language and color logic as gaugeSvg() above (arc bands, needle, na text),
+// scaled down and without tick labels/embedded number so several fit per row;
+// the label and value are rendered as separate HTML text beneath it instead.
+function miniGaugeSvg(value) {
+  const W = 120, H = 72, cx = W / 2, cy = 64, R = 50;
+  const a = (frac) => {
+    const ang = Math.PI * (1 - frac);
+    return [cx + R * Math.cos(ang), cy - R * Math.sin(ang)];
+  };
+  const arc = (f0, f1, color, width) => {
+    const [x0, y0] = a(f0), [x1, y1] = a(f1);
+    return `<path d="M ${x0} ${y0} A ${R} ${R} 0 0 1 ${x1} ${y1}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round"/>`;
+  };
+  const bear = cssVar('--bear'), neut = cssVar('--neut'), bull = cssVar('--bull');
+  const border = cssVar('--border-strong'), text3 = cssVar('--text-3');
+  let needle = '';
+  if (value !== null && Number.isFinite(value)) {
+    const f = (value + 1) / 2;
+    const ang = Math.PI * (1 - f);
+    const nx = cx + (R - 12) * Math.cos(ang), ny = cy - (R - 12) * Math.sin(ang);
+    const color = value > 0.15 ? bull : value < -0.15 ? bear : neut;
+    needle = `<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${color}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="4" fill="${color}"/>`;
+  } else {
+    needle = `<text x="${cx}" y="${cy - 8}" text-anchor="middle" font-size="11" font-weight="700" fill="${text3}">${T('naShort')}</text>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-hidden="true">
+    ${arc(0, 1, border, 6)}
+    ${arc(0.0, 0.42, bear, 6)}${arc(0.44, 0.56, neut, 6)}${arc(0.58, 1, bull, 6)}
+    ${needle}</svg>`;
+}
+
 // ---------------------------------------------------------------------------
 // Reading card
 // ---------------------------------------------------------------------------
@@ -442,6 +475,45 @@ function renderTrendDuration() {
     <div class="td-note">${T('trendDurationNote')}</div>`;
 }
 
+// Indicator Gauges card — a compact radial-gauge view of readings ALREADY
+// computed for the Indicator States card (a.indicators). Reuses indicatorName()
+// / indicatorValueText() verbatim rather than re-deriving labels/values, so
+// this is a second VISUALIZATION of the same numbers, never a second source of
+// truth. Fixed set: EMA50/200 cross + KAMA (trend), RSI + MACD + Laguerre RSI
+// (momentum), Bollinger %B + volatility squeeze (volatility), plus whichever
+// Tier-3 asset-class composite applies (forex/crypto/commodity) — these seven
+// are computed for every asset class/timeframe given enough history, so the
+// card looks the same shape everywhere rather than being mostly "n/a" tiles
+// for some instruments. CMF/volume is left out here since it's only available
+// for hourly OHLC assets with real volume (already shown in Indicator States);
+// Stochastic Oscillator and a Fibonacci "position" gauge were considered and
+// deliberately left out (see PROJECT_STATUS.md) rather than adding new
+// indicator math or inventing a derived metric not already computed elsewhere.
+const GAUGE_IDS = ['emaCross', 'kama', 'rsi', 'macd', 'laguerre', 'bollinger', 'squeeze'];
+
+function gaugeTileHtml(ind, decimals) {
+  const valueText = ind.reading === null ? T('naShort') : indicatorValueText(ind, decimals);
+  return `<div class="gauge-tile">
+    ${miniGaugeSvg(ind.reading)}
+    <div class="g-label">${indicatorName(ind)}</div>
+    <div class="g-value num">${valueText}</div>
+  </div>`;
+}
+
+function renderGauges() {
+  $('#gauges-title').textContent = T('gaugesTitle');
+  const box = $('#gauges-body');
+  const a = appState.analysis;
+  if (!a) { box.innerHTML = appState.phase === 'loading' ? '<div class="skeleton"></div>' : ''; return; }
+  const inst = findInstrument(appState.instrumentId);
+  const d = inst.decimals;
+  const tiles = GAUGE_IDS.map((id) => a.indicators.find((i) => i.id === id)).filter(Boolean);
+  const t3 = a.indicators.find((i) => i.id.startsWith('t3'));
+  if (t3) tiles.push(t3);
+  box.innerHTML = `<div class="gauge-grid">${tiles.map((ind) => gaugeTileHtml(ind, d)).join('')}</div>
+    <div class="gauge-note">${T('gaugesNote')}</div>`;
+}
+
 // Charts are drawn with Apache ECharts (local vendor build). Colors are pulled
 // from the active CSS theme tokens on every render, and renderCharts() is called
 // from renderAll() on theme toggle, so charts re-theme correctly in dark/light
@@ -600,6 +672,7 @@ function renderAll() {
   renderNews();
   renderCharts();
   renderTrendDuration();
+  renderGauges();
 }
 
 // ---------------------------------------------------------------------------

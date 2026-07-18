@@ -137,6 +137,54 @@ distinct headlines kept, mixed keys, determinism) and a browser test that
 mocks GDELT with the exact reported duplicate and confirms it renders exactly
 once while distinct headlines remain.
 
+### Card reorder + a new Indicator Gauges card (2026-07)
+Three layout changes to the two-col grid section:
+- **Trend Duration now pairs with Analysis Tiers** (was paired with News).
+  They're a natural-length match, which resolves the dead-space gap without
+  any special-case height rule — verified the gap is fully gone (row heights
+  match to the pixel), not just reduced.
+- **News & Sentiment Reading moved to the end**, full width, directly above
+  the Written Analysis Report — no longer inside `.two-col`, so it no longer
+  needs a row partner and its previous excessive-height-vs-neighbor problem
+  can't recur structurally (verified its width now matches the other
+  full-width cards, e.g. Report/Selection).
+- **New card: Indicator Gauges**, paired with Structural Levels. Eight compact
+  radial gauges (same visual language as the Current Market Reading gauge,
+  scaled down): EMA 50/200 cross, KAMA, RSI, MACD, Laguerre RSI, Bollinger %B,
+  volatility squeeze, and whichever Tier-3 asset-class composite applies. All
+  eight are values **already computed** for the Indicator States card —
+  `renderGauges()` reuses `indicatorName()`/`indicatorValueText()` verbatim, so
+  this is a second *visualization*, never a second source of truth. These
+  seven core indicators (plus Tier 3) were chosen because they're computable
+  for every asset class/timeframe given enough history, so the card has the
+  same shape everywhere. **Left out deliberately:** CMF/volume (only available
+  for hourly OHLC assets with real volume — already shown elsewhere, would be
+  "n/a" for forex/silver); a new Stochastic Oscillator (would duplicate the
+  momentum family already covered by RSI + Laguerre RSI, and would require the
+  same reference-verification rigor as every other indicator for marginal
+  analytical gain); a Fibonacci "position" gauge (not a scalar oscillator —
+  it's a set of price levels, already well-represented by the Structural
+  Levels table/tile, and turning it into a single number would mean inventing
+  a new derived metric rather than gauging something already computed).
+
+Verified: card order (`tiers+trendDuration`, `indicators+charts`,
+`levels+gauges`, then full-width `news`, then `report`); all three row pairs
+height-matched across 1440/1200/1081px, both languages, both themes, and
+silver (fewer indicator tiles than crypto); gauge values cross-checked against
+the Indicator States card's own rendered text for the same indicator (proving
+shared source of truth, not a recomputation); no §0-banned language; no
+overflow across the full breakpoint sweep (1440 down to 380px).
+
+**News-duplicate investigation:** re-checked whether the URL-based dedup was
+still missing something. Conclusion: **not a bug.** The dedup keys on the
+article URL by design, so two entries with the *same headline text* but
+*different URLs* (e.g. wire/PR content — like "New to The Street... Bloomberg
+Television" — syndicated verbatim by two separate publisher domains) are
+correctly treated as two distinct articles and both kept; only a true
+same-URL repeat gets collapsed. This matches the explicit design goal from the
+prior fix ("don't drop real distinct headlines that happen to share similar
+wording"). No dedup logic was changed.
+
 ---
 
 ## Intentional exceptions to the original brief
