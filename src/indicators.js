@@ -415,3 +415,45 @@ function pivotPoints(candles, ohlc) {
     r2: p + (h - l), s2: p - (h - l),
   };
 }
+
+// --- Trend duration (persistence) -----------------------------------------
+// Purely descriptive: for how long has a two-sided state held, and how much
+// has price moved while it held. No forecast, no implication about what
+// happens next — a duration is not a signal.
+// Built from EMA(close) only, so — unlike ATR/ADX/squeeze — it needs NO
+// close-to-close adaptation and is directly comparable across every asset
+// class and timeframe (crypto/gold hourly, forex/silver daily alike).
+//
+// Walks a per-bar "side" array (+1/-1/null) backward from the tip to find how
+// many consecutive bars have shared the tip's side. If the streak runs all
+// the way to the first bar where `side` is defined, the true start is
+// unknown (it may have begun before the loaded history) — that case is
+// marked `censored: true` so the caller reports "at least N", never a false
+// exact count.
+function streakFromSide(side, cl) {
+  const n = side.length;
+  const tipSide = side[n - 1];
+  if (tipSide === null || tipSide === undefined) return null;
+  const firstValid = side.findIndex((s) => s !== null);
+  if (firstValid === -1) return null;
+  let startIdx = n - 1;
+  for (let i = n - 2; i >= firstValid; i--) {
+    if (side[i] !== tipSide) break;
+    startIdx = i;
+  }
+  const bars = (n - 1) - startIdx;
+  const startPrice = cl[startIdx];
+  const changePct = startPrice !== 0 ? ((cl[n - 1] - startPrice) / startPrice) * 100 : 0;
+  return { bars, changePct, censored: startIdx === firstValid, dir: tipSide > 0 ? 'up' : 'down' };
+}
+
+function trendDurations(cl) {
+  const e50 = ema(cl, 50);
+  const e200 = ema(cl, 200);
+  const sideVsEma50 = cl.map((c, i) => (e50[i] === null ? null : Math.sign(c - e50[i]) || null));
+  const sideEma50Vs200 = e50.map((v, i) => (v === null || e200[i] === null ? null : Math.sign(v - e200[i]) || null));
+  return {
+    priceVsEma50: streakFromSide(sideVsEma50, cl),
+    ema50VsEma200: streakFromSide(sideEma50Vs200, cl),
+  };
+}

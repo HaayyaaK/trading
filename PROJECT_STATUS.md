@@ -90,6 +90,27 @@ Timeframe selector (1h/4h/8h/12h/1d) applies only to Binance-sourced instruments
 valid). Forex + silver are daily at the source, so they **lock to Daily with a
 visible reason** — sub-daily forex candles are never synthesized from daily data.
 
+### Two-column grid is a true 50/50, and a new "Trend Duration" card (2026-07)
+The Tiers/News/Indicators/Charts/Levels grid previously split its 5 cards into
+two hardcoded `.col` groups (3 cards left, 2 right) inside a `1.1fr .9fr`
+grid — neither a true 50/50 nor robust to card count (uneven group sizes left
+a ragged last row). Fixed by making all cards direct children of a single
+`repeat(2, minmax(0,1fr))` grid (row-major auto-flow), so the split is exactly
+50/50 at every 2-column breakpoint regardless of how many cards are in it —
+verified at the CSS level (computed column widths equal to sub-pixel: e.g.
+600/600, 560/560, 500.5/500.5 across widths).
+
+Added a 6th card, **Trend Duration**: for how many candles has (a) price sat
+on its current side of EMA50, and (b) EMA50 sat on its current side of EMA200,
+plus the % price change over that span. Purely descriptive (§0: a duration is
+not a forecast), built only from `ema(closes)` — no OHLC dependency, so unlike
+ATR/ADX it needs no close-to-close adaptation and works identically for every
+asset class/timeframe. If a streak runs to the start of loaded history, it's
+reported as "≥ N" (`censored: true`) rather than a false exact count — the
+same no-fabrication discipline used throughout. Verified with hand-walked unit
+tests (incl. a left-censored case and a flip-at-the-tip edge case) and an
+independent brute-force cross-check against the live BTC fixture.
+
 ---
 
 ## Intentional exceptions to the original brief

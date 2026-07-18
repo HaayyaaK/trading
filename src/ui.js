@@ -408,6 +408,40 @@ function renderNews() {
   box.innerHTML = avg + `<div class="news-list">${items}</div>`;
 }
 
+// Trend duration — how long has each of two moving-average-based states held,
+// and how much has price moved while it held (spec §0: a duration, not a
+// forecast). Built directly from ema(closes) via indicators.js's
+// trendDurations(), so it works identically across every asset class and
+// timeframe with no close-to-close adaptation needed (see indicators.js).
+function trendDurationTile(streak, labelKey, aboveKey, belowKey) {
+  if (!streak) {
+    return `<div class="info-tile"><div class="t">${T(labelKey)}</div><div class="sub">${T('tdNa')}</div></div>`;
+  }
+  const dirLabel = streak.dir === 'up' ? T(aboveKey) : T(belowKey);
+  const barsText = (streak.censored ? T('tdAtLeast') + ' ' : '') + fmt(streak.bars, 0) + ' ' + T('tdBarsUnit');
+  return `<div class="info-tile">
+    <div class="t">${T(labelKey)}</div>
+    <div class="dir">${dirLabel}</div>
+    <div class="big num">${barsText}</div>
+    <div class="sub">${T('tdSince')}: <span class="num">${fmtSigned(streak.changePct, 2)}%</span></div>
+    ${streak.censored ? `<div class="sub">${T('tdCensoredNote')}</div>` : ''}
+  </div>`;
+}
+
+function renderTrendDuration() {
+  $('#trend-duration-title').textContent = T('trendDurationTitle');
+  const box = $('#trend-duration-body');
+  const s = appState.series;
+  if (!s) { box.innerHTML = appState.phase === 'loading' ? '<div class="skeleton"></div>' : ''; return; }
+  const cl = s.candles.map((c) => c.c);
+  const td = trendDurations(cl);
+  box.innerHTML = `<div class="td-grid">
+      ${trendDurationTile(td.priceVsEma50, 'tdPriceEma', 'tdAbove', 'tdBelow')}
+      ${trendDurationTile(td.ema50VsEma200, 'tdEmaCross', 'tdGolden', 'tdDeath')}
+    </div>
+    <div class="td-note">${T('trendDurationNote')}</div>`;
+}
+
 // Charts are drawn with Apache ECharts (local vendor build). Colors are pulled
 // from the active CSS theme tokens on every render, and renderCharts() is called
 // from renderAll() on theme toggle, so charts re-theme correctly in dark/light
@@ -565,6 +599,7 @@ function renderAll() {
   renderDetail();
   renderNews();
   renderCharts();
+  renderTrendDuration();
 }
 
 // ---------------------------------------------------------------------------

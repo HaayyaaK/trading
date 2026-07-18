@@ -275,6 +275,11 @@ header.site {
 .info-tile .big { font-size: var(--fs-xl); font-weight: 700; }
 .info-tile .sub { font-size: var(--fs-xs); color: var(--text-3); margin-block-start: var(--sp-1); }
 
+/* ---------- trend duration ---------- */
+.td-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+.td-grid .info-tile .dir { font-size: var(--fs-sm); font-weight: 700; color: var(--accent); margin-block-end: var(--sp-1); }
+.td-note { font-size: var(--fs-xs); color: var(--text-3); margin-block-start: var(--sp-3); }
+
 /* ---------- tiers ---------- */
 .tier-row { display: grid; grid-template-columns: 220px 1fr 64px; gap: var(--sp-4); align-items: center; padding-block: var(--sp-3); border-block-end: 1px dashed var(--border); }
 .tier-row:last-child { border-block-end: 0; }
@@ -338,8 +343,11 @@ table.levels td.num { font-weight: 700; color: var(--text-1); }
 
 /* ---------- layout ---------- */
 main { display: flex; flex-direction: column; gap: var(--gap-card); }
-.two-col { display: grid; grid-template-columns: 1.1fr .9fr; gap: var(--gap-card); align-items: start; }
-.col { display: flex; flex-direction: column; gap: var(--gap-card); }
+/* True 50/50 split at every 2-column breakpoint, independent of card count:
+   all cards are direct grid children (row-major auto-flow) rather than being
+   pre-sorted into two separately-stacked containers, which is what let the
+   two sides drift to unequal total heights before. */
+.two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-card); align-items: start; }
 
 footer.site { margin-block-start: var(--sp-6); color: var(--text-3); font-size: var(--fs-xs); display: flex; flex-direction: column; gap: var(--sp-1); }
 
@@ -365,6 +373,7 @@ footer.site { margin-block-start: var(--sp-6); color: var(--text-3); font-size: 
   :root { --pad-card: var(--sp-4); --gap-card: var(--sp-3); }
   .wrap { padding-inline: var(--sp-3); }
   .info-grid { grid-template-columns: 1fr; }
+  .td-grid { grid-template-columns: 1fr; }
   .selection-grid { grid-template-columns: 1fr; }
   .ind-grid { grid-template-columns: 1fr; }
   .tier-row { grid-template-columns: 1fr; gap: var(--sp-1); padding-block: var(--sp-2); }
@@ -430,34 +439,34 @@ footer.site { margin-block-start: var(--sp-6); color: var(--text-3); font-size: 
     </section>
 
     <div class="two-col">
-      <div class="col">
-        <section class="card" data-card="tiers">
-          <h2 class="card-head"><span class="card-title" id="tiers-title"></span></h2>
-          <div class="card-body"><div id="tiers-body"></div></div>
-        </section>
-        <section class="card" data-card="indicators">
-          <h2 class="card-head"><span class="card-title" id="indicators-title"></span></h2>
-          <div class="card-body"><div id="indicators-body"></div></div>
-        </section>
-        <section class="card" data-card="levels">
-          <h2 class="card-head"><span class="card-title" id="levels-title"></span></h2>
-          <div class="card-body"><div id="levels-body"></div></div>
-        </section>
-      </div>
-      <div class="col">
-        <section class="card" data-card="news">
-          <h2 class="card-head"><span class="card-title" id="news-title"></span></h2>
-          <div class="card-body"><div id="news-body"></div></div>
-        </section>
-        <section class="card" data-card="charts">
-          <h2 class="card-head"><span class="card-title" id="charts-title"></span></h2>
-          <div class="card-body">
-            <div class="chart-box"><div class="t" id="chart-price-t"></div><div id="chart-price" class="echart"></div></div>
-            <div class="chart-box"><div class="t" id="chart-volume-t"></div><div id="chart-volume" class="echart"></div><div class="chart-na" id="chart-volume-na" style="display:none"></div></div>
-            <div class="chart-box"><div class="t" id="chart-volatility-t"></div><div id="chart-volatility" class="echart"></div></div>
-          </div>
-        </section>
-      </div>
+      <section class="card" data-card="tiers">
+        <h2 class="card-head"><span class="card-title" id="tiers-title"></span></h2>
+        <div class="card-body"><div id="tiers-body"></div></div>
+      </section>
+      <section class="card" data-card="news">
+        <h2 class="card-head"><span class="card-title" id="news-title"></span></h2>
+        <div class="card-body"><div id="news-body"></div></div>
+      </section>
+      <section class="card" data-card="indicators">
+        <h2 class="card-head"><span class="card-title" id="indicators-title"></span></h2>
+        <div class="card-body"><div id="indicators-body"></div></div>
+      </section>
+      <section class="card" data-card="charts">
+        <h2 class="card-head"><span class="card-title" id="charts-title"></span></h2>
+        <div class="card-body">
+          <div class="chart-box"><div class="t" id="chart-price-t"></div><div id="chart-price" class="echart"></div></div>
+          <div class="chart-box"><div class="t" id="chart-volume-t"></div><div id="chart-volume" class="echart"></div><div class="chart-na" id="chart-volume-na" style="display:none"></div></div>
+          <div class="chart-box"><div class="t" id="chart-volatility-t"></div><div id="chart-volatility" class="echart"></div></div>
+        </div>
+      </section>
+      <section class="card" data-card="levels">
+        <h2 class="card-head"><span class="card-title" id="levels-title"></span></h2>
+        <div class="card-body"><div id="levels-body"></div></div>
+      </section>
+      <section class="card" data-card="trendDuration">
+        <h2 class="card-head"><span class="card-title" id="trend-duration-title"></span></h2>
+        <div class="card-body"><div id="trend-duration-body"></div></div>
+      </section>
     </div>
 
     <section class="card" data-card="report">
@@ -1276,6 +1285,48 @@ function pivotPoints(candles, ohlc) {
     r2: p + (h - l), s2: p - (h - l),
   };
 }
+
+// --- Trend duration (persistence) -----------------------------------------
+// Purely descriptive: for how long has a two-sided state held, and how much
+// has price moved while it held. No forecast, no implication about what
+// happens next — a duration is not a signal.
+// Built from EMA(close) only, so — unlike ATR/ADX/squeeze — it needs NO
+// close-to-close adaptation and is directly comparable across every asset
+// class and timeframe (crypto/gold hourly, forex/silver daily alike).
+//
+// Walks a per-bar "side" array (+1/-1/null) backward from the tip to find how
+// many consecutive bars have shared the tip's side. If the streak runs all
+// the way to the first bar where `side` is defined, the true start is
+// unknown (it may have begun before the loaded history) — that case is
+// marked `censored: true` so the caller reports "at least N", never a false
+// exact count.
+function streakFromSide(side, cl) {
+  const n = side.length;
+  const tipSide = side[n - 1];
+  if (tipSide === null || tipSide === undefined) return null;
+  const firstValid = side.findIndex((s) => s !== null);
+  if (firstValid === -1) return null;
+  let startIdx = n - 1;
+  for (let i = n - 2; i >= firstValid; i--) {
+    if (side[i] !== tipSide) break;
+    startIdx = i;
+  }
+  const bars = (n - 1) - startIdx;
+  const startPrice = cl[startIdx];
+  const changePct = startPrice !== 0 ? ((cl[n - 1] - startPrice) / startPrice) * 100 : 0;
+  return { bars, changePct, censored: startIdx === firstValid, dir: tipSide > 0 ? 'up' : 'down' };
+}
+
+function trendDurations(cl) {
+  const e50 = ema(cl, 50);
+  const e200 = ema(cl, 200);
+  const sideVsEma50 = cl.map((c, i) => (e50[i] === null ? null : Math.sign(c - e50[i]) || null));
+  const sideEma50Vs200 = e50.map((v, i) => (v === null || e200[i] === null ? null : Math.sign(v - e200[i]) || null));
+  return {
+    priceVsEma50: streakFromSide(sideVsEma50, cl),
+    ema50VsEma200: streakFromSide(sideEma50Vs200, cl),
+  };
+}
 </script>
 <script>
 // ═══ inlined from src/analysis.js ═══
@@ -1751,6 +1802,20 @@ const i18n = {
     zoneTouches: 'لمسات',
     pivotsNA: 'نقاط الارتكاز غير متاحة لسلاسل الإغلاق اليومي (تتطلب مدى لحظياً)',
 
+    trendDurationTitle: 'مدة استمرار الاتجاه',
+    trendDurationNote: 'وصفٌ لمدة استمرار حالتين قائمتين على المتوسطات المتحركة — ليس تنبؤاً بما سيحدث لاحقاً.',
+    tdPriceEma: 'منذ آخر عبور للسعر مع EMA50',
+    tdEmaCross: 'منذ آخر تقاطع EMA50/200',
+    tdBarsUnit: 'شمعة',
+    tdSince: 'التغيّر خلال هذه المدة',
+    tdAbove: 'السعر أعلى من EMA50',
+    tdBelow: 'السعر أدنى من EMA50',
+    tdGolden: 'EMA50 أعلى من EMA200',
+    tdDeath: 'EMA50 أدنى من EMA200',
+    tdAtLeast: 'المدة ≥',
+    tdCensoredNote: 'الحالة مستمرة منذ بداية التاريخ المتاح، فقد تكون قد بدأت قبل ذلك — العدد هو الحد الأدنى المؤكَّد.',
+    tdNa: 'غير متاح — يتطلب تاريخاً أطول',
+
     newsTitle: 'الأخبار وقراءة المشاعر',
     newsUnavailable: 'الأخبار غير متاحة حالياً — لن تُعرض قيم مُختلقة، والقراءة المركبة فنية فقط.',
     newsSentAvg: 'متوسط قراءة العناوين',
@@ -1870,6 +1935,20 @@ const i18n = {
     zoneLevel: 'Swing zone',
     zoneTouches: 'touches',
     pivotsNA: 'Pivot points are n/a for daily close-only series (need intraday range)',
+
+    trendDurationTitle: 'Trend duration',
+    trendDurationNote: 'Describes how long two moving-average-based states have held — not a forecast of what happens next.',
+    tdPriceEma: 'Since price last crossed EMA50',
+    tdEmaCross: 'Since the last EMA50/200 cross',
+    tdBarsUnit: 'candles',
+    tdSince: 'Change over that period',
+    tdAbove: 'Price is above EMA50',
+    tdBelow: 'Price is below EMA50',
+    tdGolden: 'EMA50 is above EMA200',
+    tdDeath: 'EMA50 is below EMA200',
+    tdAtLeast: 'Duration ≥',
+    tdCensoredNote: 'This state has held for the entire available history, so it may have begun earlier — the count shown is the confirmed minimum.',
+    tdNa: 'n/a — requires longer history',
 
     newsTitle: 'News & sentiment reading',
     newsUnavailable: 'News is currently unreachable — no fabricated values are shown; the combined reading is technical-only.',
@@ -2637,6 +2716,40 @@ function renderNews() {
   box.innerHTML = avg + `<div class="news-list">${items}</div>`;
 }
 
+// Trend duration — how long has each of two moving-average-based states held,
+// and how much has price moved while it held (spec §0: a duration, not a
+// forecast). Built directly from ema(closes) via indicators.js's
+// trendDurations(), so it works identically across every asset class and
+// timeframe with no close-to-close adaptation needed (see indicators.js).
+function trendDurationTile(streak, labelKey, aboveKey, belowKey) {
+  if (!streak) {
+    return `<div class="info-tile"><div class="t">${T(labelKey)}</div><div class="sub">${T('tdNa')}</div></div>`;
+  }
+  const dirLabel = streak.dir === 'up' ? T(aboveKey) : T(belowKey);
+  const barsText = (streak.censored ? T('tdAtLeast') + ' ' : '') + fmt(streak.bars, 0) + ' ' + T('tdBarsUnit');
+  return `<div class="info-tile">
+    <div class="t">${T(labelKey)}</div>
+    <div class="dir">${dirLabel}</div>
+    <div class="big num">${barsText}</div>
+    <div class="sub">${T('tdSince')}: <span class="num">${fmtSigned(streak.changePct, 2)}%</span></div>
+    ${streak.censored ? `<div class="sub">${T('tdCensoredNote')}</div>` : ''}
+  </div>`;
+}
+
+function renderTrendDuration() {
+  $('#trend-duration-title').textContent = T('trendDurationTitle');
+  const box = $('#trend-duration-body');
+  const s = appState.series;
+  if (!s) { box.innerHTML = appState.phase === 'loading' ? '<div class="skeleton"></div>' : ''; return; }
+  const cl = s.candles.map((c) => c.c);
+  const td = trendDurations(cl);
+  box.innerHTML = `<div class="td-grid">
+      ${trendDurationTile(td.priceVsEma50, 'tdPriceEma', 'tdAbove', 'tdBelow')}
+      ${trendDurationTile(td.ema50VsEma200, 'tdEmaCross', 'tdGolden', 'tdDeath')}
+    </div>
+    <div class="td-note">${T('trendDurationNote')}</div>`;
+}
+
 // Charts are drawn with Apache ECharts (local vendor build). Colors are pulled
 // from the active CSS theme tokens on every render, and renderCharts() is called
 // from renderAll() on theme toggle, so charts re-theme correctly in dark/light
@@ -2794,6 +2907,7 @@ function renderAll() {
   renderDetail();
   renderNews();
   renderCharts();
+  renderTrendDuration();
 }
 
 // ---------------------------------------------------------------------------
