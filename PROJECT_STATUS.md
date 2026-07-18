@@ -111,6 +111,32 @@ same no-fabrication discipline used throughout. Verified with hand-walked unit
 tests (incl. a left-censored case and a flip-at-the-tip edge case) and an
 independent brute-force cross-check against the live BTC fixture.
 
+### Row-height matching in the two-col grid, and news dedup (2026-07)
+The grid's `align-items: start` let each row's two cards size independently to
+their own content, so a short card (e.g. Analysis Tiers) sat next to a much
+taller partner (News) with a visibly uneven bottom edge. Changed to
+`align-items: stretch` (no fixed heights introduced — the row height is always
+driven by its tallest card). Cards inside `.two-col` are now flex columns with
+`.card-body { flex: 1 1 auto }` so the extra space lands inside the body; a
+**collapsed** card in a stretched row gets `justify-content: center` so its
+single header line centers in the available height instead of sitting pinned
+at the top with dead space below. Verified: exact pixel-matched row heights
+(±1px) across 1440/1200/1081px, both languages, both themes, a mixed
+collapsed+expanded row, and an instrument with a different indicator-tile
+count (silver vs. crypto).
+
+`fetchNews` had no deduplication — GDELT's result set can include the same
+article more than once, and a real duplicate ("New to The Street... Bloomberg
+Television") was observed rendering twice in one News card. Added
+`dedupeNewsItems()`: keyed on the trimmed article URL (most reliable), falling
+back to a normalized (trimmed+lowercased) title only when a URL is missing;
+keeps the first occurrence, never fuzzy-matches, so genuinely distinct
+headlines with similar wording are preserved. Verified with unit tests
+(exact-URL dup, whitespace-only URL variants, title-fallback, similar-but-
+distinct headlines kept, mixed keys, determinism) and a browser test that
+mocks GDELT with the exact reported duplicate and confirms it renders exactly
+once while distinct headlines remain.
+
 ---
 
 ## Intentional exceptions to the original brief

@@ -214,6 +214,18 @@ header.site {
 .card.collapsed > .card-body { display: none; }
 .card.collapsed { padding-block-end: var(--pad-card); }
 .card.collapsed .card-head { margin-block-end: 0; }
+
+/* Cards inside the two-column grid stretch to match their row partner's
+   height (see .two-col's align-items: stretch below) rather than sizing
+   independently to their own content. Turn each card into a flex column so
+   its body can grow into that extra space; when a card is collapsed, center
+   its (only visible) header within the stretched box instead of leaving it
+   pinned to the top with dead space below, so a short card next to a much
+   taller partner still reads as deliberate. No fixed heights are introduced —
+   the row height is always driven by its tallest card's natural content. */
+.two-col > .card { display: flex; flex-direction: column; }
+.two-col > .card > .card-body { flex: 1 1 auto; }
+.two-col > .card.collapsed { justify-content: center; }
 .card-body { animation: cardReveal .28s ease; }
 @keyframes cardReveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
@@ -347,7 +359,7 @@ main { display: flex; flex-direction: column; gap: var(--gap-card); }
    all cards are direct grid children (row-major auto-flow) rather than being
    pre-sorted into two separately-stacked containers, which is what let the
    two sides drift to unequal total heights before. */
-.two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-card); align-items: start; }
+.two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-card); align-items: stretch; }
 
 footer.site { margin-block-start: var(--sp-6); color: var(--text-3); font-size: var(--fs-xs); display: flex; flex-direction: column; gap: var(--sp-1); }
 
@@ -825,6 +837,24 @@ const GDELT_BACKOFF_BASE = 30000;           // first failure waits 30s before re
 const GDELT_BACKOFF_MAX = 10 * 60 * 1000;   // cap the backoff at 10 minutes
 const gdeltState = { lastAttempt: 0, blockedUntil: 0, fails: 0 };
 
+// GDELT's result set can include the same article more than once (e.g. it was
+// indexed from more than one crawl pass). Deduplicate deterministically, keyed
+// on the article URL (trimmed) — the most reliable stable identifier — with a
+// fallback to a normalized title (trimmed + lowercased) only for the rare item
+// with no URL. Keeps the first occurrence of each key; never fuzzy-matches, so
+// genuinely distinct headlines with similar wording are never collapsed.
+function dedupeNewsItems(items) {
+  const seen = new Set();
+  const out = [];
+  for (const a of items) {
+    const key = a.url ? 'u:' + a.url.trim() : 't:' + a.title.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(a);
+  }
+  return out;
+}
+
 async function fetchNews(inst) {
   const q = inst.newsQuery;
   const hit = newsCache[q];
@@ -846,12 +876,12 @@ async function fetchNews(inst) {
     // Reachable endpoint: clear any backoff regardless of item count.
     gdeltState.fails = 0;
     gdeltState.blockedUntil = 0;
-    const items = (j.articles || []).map((a) => ({
+    const items = dedupeNewsItems((j.articles || []).map((a) => ({
       title: String(a.title || '').trim(),
       url: a.url,
       source: a.domain || '',
       seen: a.seendate || '',
-    })).filter((a) => a.title);
+    })).filter((a) => a.title));
     const value = { ok: items.length > 0, items };
     if (value.ok) newsCache[q] = { at: Date.now(), value };
     return value;

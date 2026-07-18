@@ -330,6 +330,24 @@ const GDELT_BACKOFF_BASE = 30000;           // first failure waits 30s before re
 const GDELT_BACKOFF_MAX = 10 * 60 * 1000;   // cap the backoff at 10 minutes
 const gdeltState = { lastAttempt: 0, blockedUntil: 0, fails: 0 };
 
+// GDELT's result set can include the same article more than once (e.g. it was
+// indexed from more than one crawl pass). Deduplicate deterministically, keyed
+// on the article URL (trimmed) — the most reliable stable identifier — with a
+// fallback to a normalized title (trimmed + lowercased) only for the rare item
+// with no URL. Keeps the first occurrence of each key; never fuzzy-matches, so
+// genuinely distinct headlines with similar wording are never collapsed.
+function dedupeNewsItems(items) {
+  const seen = new Set();
+  const out = [];
+  for (const a of items) {
+    const key = a.url ? 'u:' + a.url.trim() : 't:' + a.title.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(a);
+  }
+  return out;
+}
+
 async function fetchNews(inst) {
   const q = inst.newsQuery;
   const hit = newsCache[q];
@@ -351,12 +369,12 @@ async function fetchNews(inst) {
     // Reachable endpoint: clear any backoff regardless of item count.
     gdeltState.fails = 0;
     gdeltState.blockedUntil = 0;
-    const items = (j.articles || []).map((a) => ({
+    const items = dedupeNewsItems((j.articles || []).map((a) => ({
       title: String(a.title || '').trim(),
       url: a.url,
       source: a.domain || '',
       seen: a.seendate || '',
-    })).filter((a) => a.title);
+    })).filter((a) => a.title));
     const value = { ok: items.length > 0, items };
     if (value.ok) newsCache[q] = { at: Date.now(), value };
     return value;
