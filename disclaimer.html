@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إخلاء المسؤولية — مِرصاد الأسواق</title>
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e15">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/fontawesome-free-v7.3.1-web/css/all.min.css">
+<style>
+/* Shares the dashboard's design tokens so the two pages read as one product. */
+:root[data-theme="dark"] {
+  --bg: #0b0e15; --card: #141927; --card-2: #1a2032; --border: #232b40;
+  --border-strong: #313b58; --text-1: #eef1f8; --text-2: #9aa5c0; --text-3: #5d6883;
+  --accent: #d9b16b; --accent-ink: #14100a; --accent-soft: rgba(217,177,107,.12);
+  --warn: #e8b64c; --warn-soft: rgba(232,182,76,.12);
+  --shadow: 0 12px 32px rgba(0,0,0,.45); color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: #f4f1ea; --card: #fdfcf9; --card-2: #f6f3ec; --border: #e0dacc;
+  --border-strong: #c9c1ad; --text-1: #241f16; --text-2: #6b6353; --text-3: #a39a86;
+  --accent: #9a6d1f; --accent-ink: #fffdf7; --accent-soft: rgba(154,109,31,.1);
+  --warn: #a06a08; --warn-soft: rgba(160,106,8,.12);
+  --shadow: 0 10px 26px rgba(64,52,24,.12); color-scheme: light;
+}
+:root {
+  --font-body: "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  --font-title: "Readex Pro", "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  --fs-2xs: 11px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px;
+  --fs-md: 15px; --fs-lg: 16px; --fs-xl: 18px; --fs-2xl: 21px;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px;
+  --radius-card: 16px; --radius-control: 10px; --radius-pill: 999px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text-1); font-family: var(--font-body);
+  font-size: var(--fs-md); line-height: 1.7; min-height: 100vh;
+  transition: background .35s ease, color .35s ease;
+}
+.wrap { max-width: 920px; margin-inline: auto; padding: var(--sp-5) clamp(14px, 3vw, 32px) 60px; }
+
+header.site { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding-block: var(--sp-4) var(--sp-6); }
+.brand { display: flex; align-items: center; gap: var(--sp-4); }
+.brand-mark {
+  inline-size: 44px; block-size: 44px; border-radius: var(--radius-control); flex: none;
+  background: linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--bg)));
+  display: grid; place-items: center; color: var(--accent-ink); box-shadow: var(--shadow);
+}
+.brand h1 { font-family: var(--font-title); font-size: var(--fs-2xl); font-weight: 700; }
+.brand p { font-size: var(--fs-xs); color: var(--text-2); }
+.head-tools { margin-inline-start: auto; display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.pill-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--card); overflow: hidden; }
+.pill-toggle button { border: 0; background: transparent; color: var(--text-2); cursor: pointer; padding: var(--sp-2) var(--sp-4); font: inherit; font-size: var(--fs-sm); font-weight: 700; transition: background .2s, color .2s; }
+.pill-toggle button.active { background: var(--accent); color: var(--accent-ink); }
+.icon-btn { inline-size: 38px; block-size: 38px; border-radius: var(--radius-pill); cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-2); display: grid; place-items: center; font-size: var(--fs-lg); transition: transform .25s, color .2s; }
+.icon-btn:hover { color: var(--accent); transform: rotate(15deg); }
+
+.back-link { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; color: var(--text-2); padding: var(--sp-2) var(--sp-4); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--card); transition: color .2s, border-color .2s; margin-block-end: var(--sp-4); }
+.back-link:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.back-link i { font-size: var(--fs-xs); }
+:root[dir="rtl"] .back-link i { transform: scaleX(-1); } /* arrow points toward the reading direction */
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow); padding: clamp(20px, 4vw, 34px); }
+.doc-title { font-family: var(--font-title); font-size: var(--fs-2xl); font-weight: 700; color: var(--text-1); }
+.updated { font-size: var(--fs-xs); color: var(--text-3); margin-block: var(--sp-2) var(--sp-5); padding-block-end: var(--sp-4); border-block-end: 1px solid var(--border); display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+.updated .num { direction: ltr; unicode-bidi: isolate; }
+
+.lead { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); border-radius: var(--radius-control); padding: var(--sp-4); font-weight: 600; color: var(--text-1); margin-block-end: var(--sp-5); }
+h2.sec { font-family: var(--font-title); font-size: var(--fs-lg); font-weight: 600; color: var(--text-1); margin-block: var(--sp-6) var(--sp-3); display: flex; align-items: center; gap: var(--sp-3); }
+h2.sec::before { content: ""; inline-size: 5px; block-size: 18px; border-radius: 3px; background: var(--accent); flex: none; }
+p.body { font-size: var(--fs-sm); color: var(--text-2); margin-block-end: var(--sp-3); }
+.callout { background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--border)); border-radius: var(--radius-control); padding: var(--sp-3) var(--sp-4); color: var(--warn); font-weight: 600; font-size: var(--fs-sm); margin-block: var(--sp-4); }
+a.inline { color: var(--accent); text-decoration: none; border-block-end: 1px dotted color-mix(in srgb, var(--accent) 60%, transparent); }
+a.inline:hover { border-block-end-style: solid; }
+footer.site { margin-block-start: var(--sp-6); color: var(--text-3); font-size: var(--fs-xs); text-align: center; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M3 17 8 10l4 4 6-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="18" cy="5" r="2" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <h1 id="brand-title"></h1>
+        <p id="brand-sub"></p>
+      </div>
+    </div>
+    <div class="head-tools">
+      <div class="pill-toggle" role="group" aria-label="language">
+        <button id="btn-ar" type="button">عربي</button>
+        <button id="btn-en" type="button">EN</button>
+      </div>
+      <button id="btn-theme" class="icon-btn" type="button" aria-label="theme"></button>
+    </div>
+  </header>
+
+  <a class="back-link" id="back-link" href="./"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span id="back-text"></span></a>
+
+  <main class="card">
+    <h1 class="doc-title" id="doc-title"></h1>
+    <div class="updated"><span id="updated-label"></span> <span class="num">2026-07-18</span> <span style="opacity:.6">•</span> <span id="updated-brand"></span></div>
+    <div id="content"></div>
+    <footer class="site" id="footer"></footer>
+  </main>
+</div>
+
+<script>
+// Bilingual content — Arabic default, matching the dashboard. The framing is the
+// analysis-not-advice discipline (spec §0): descriptive readings, never advice.
+const T = {
+  ar: {
+    dir: 'rtl', brandTitle: 'مِرصاد الأسواق', brandSub: 'إخلاء المسؤولية',
+    back: 'العودة إلى اللوحة', docTitle: 'إخلاء المسؤولية',
+    updatedLabel: 'آخر تحديث:', updatedBrand: 'مِرصاد الأسواق · hayyaak.trade',
+    themeToLight: 'الوضع الفاتح', themeToDark: 'الوضع الداكن',
+    lead: 'مِرصاد الأسواق أداةٌ لعرض بيانات السوق وتحليلها تحليلاً وصفياً فقط — وهي ليست نصيحةً مالية ولا توصيةً بالتداول.',
+    sections: [
+      { h: 'طبيعة الأداة', p: [
+        'تعرض هذه الأداة قراءاتٍ وصفية لما تُظهره بيانات السوق حالياً عبر مؤشرات فنية. وهي ليست خدمةً استشارية، ولا تُقدّم نصيحةً مالية أو استثمارية، ولا توصياتٍ أو إشاراتِ تداول، ولا أي إرشادٍ بالشراء أو البيع أو الاحتفاظ.',
+        'لا ينبغي تفسير أي رقمٍ أو قراءةٍ أو نصٍّ في الأداة على أنه دعوةٌ أو توصيةٌ لشراء أصلٍ أو بيعه أو الاحتفاظ به. المؤشرات والقراءات المركّبة هي وصفٌ لحالة البيانات لحظة عرضها لا أكثر.' ] },
+      { h: 'ليست نصيحة مالية — والمخاطرة على المستخدم', p: [
+        'ينطوي التداول والاستثمار في الأسواق المالية على مخاطرَ جوهرية قد تؤدي إلى خسارة رأس المال كلياً أو جزئياً. أي قرارٍ تتخذه هو مسؤوليتك وحدك.',
+        'يُنصح بالرجوع إلى مستشارٍ مالي مرخّص قبل اتخاذ أي قرار. استخدامك للأداة واعتمادك على أي معلومةٍ فيها يقعان على مسؤوليتك الكاملة.' ],
+        callout: '⚠ لا تُتّخذ قرارات تداولٍ أو استثمار بناءً على هذه الأداة وحدها.' },
+      { h: 'مصادر البيانات ودقّتها', p: [
+        'تُجلب البيانات من مصادرَ عامة تابعة لأطرافٍ ثالثة (منها Binance، وأسعار البنك المركزي الأوروبي عبر Frankfurter، وgold-api، وGDELT). وقد تكون هذه البيانات متأخرةً أو ناقصةً أو غير دقيقة أو غير متاحة.',
+        'تستخدم بعض الأدوات بياناتٍ بديلة أو وكيلة تُفصح عنها الواجهة صراحةً — فمثلاً تُشتق شموع الذهب من رمز PAXG، وتعتمد الفضة على سلسلةٍ تاريخية مضمّنة. لا نضمن دقة البيانات أو اكتمالها أو استمرار توفرها، وهي تُقدَّم «كما هي» و«حسب توفرها».' ] },
+      { h: 'حدود المسؤولية', p: [
+        'إلى أقصى حدٍّ يسمح به القانون المعمول به، لا نتحمّل أي مسؤوليةٍ عن أي خسارةٍ أو ضررٍ من أي نوع — مباشرٍ أو غير مباشر أو تبعي — ينشأ عن استخدام الأداة أو تعذّر استخدامها أو الاعتماد على أي معلومةٍ فيها.' ] },
+      { h: 'روابط وخدمات الأطراف الثالثة', p: [
+        'قد تعرض الأداة روابطَ أو عناوينَ أخبارٍ من مصادرَ خارجية. هذه المصادر لا نتحكّم بها ولا نتبنّاها ولا نضمن محتواها، وزيارتك لها تخضع لشروطها وتقع على مسؤوليتك.' ] },
+      { h: 'تحديثات هذا الإشعار والتواصل', p: [
+        'قد نُحدّث إخلاء المسؤولية هذا في أي وقت، ويسري التحديث فور نشره على هذه الصفحة. لأي استفسارٍ حول هذا الإشعار أو الأداة، تواصل معنا عبر <a class="inline" href="https://hayyaak.trade">hayyaak.trade</a>.' ] },
+    ],
+    footer: 'أداة تحليلٍ وتصوّرٍ للبيانات فقط — لا تُقدّم توصياتٍ ولا إشاراتِ تداول ولا نصيحةً مالية.',
+  },
+  en: {
+    dir: 'ltr', brandTitle: 'Market Mirsad', brandSub: 'Disclaimer',
+    back: 'Back to the dashboard', docTitle: 'Disclaimer',
+    updatedLabel: 'Last updated:', updatedBrand: 'Market Mirsad · hayyaak.trade',
+    themeToLight: 'Light mode', themeToDark: 'Dark mode',
+    lead: 'Market Mirsad is a market-data visualization and descriptive-analysis tool only — it is not financial advice and not a trade recommendation.',
+    sections: [
+      { h: 'Nature of the tool', p: [
+        'This tool presents descriptive readings of what market data currently shows through technical indicators. It is not an advisory service, and it does not provide financial or investment advice, recommendations, trade signals, or any guidance to buy, sell, or hold.',
+        'No figure, reading, or text in the tool should be construed as a solicitation or recommendation to buy, sell, or hold any asset. The indicators and composite readings describe the state of the data at the moment shown — nothing more.' ] },
+      { h: 'Not financial advice — use at your own risk', p: [
+        'Trading and investing in financial markets involve substantial risk, including possible loss of some or all of your capital. Any decision you make is your sole responsibility.',
+        'You should consult a licensed financial advisor before acting. Your use of the tool and reliance on any information in it are entirely at your own risk.' ],
+        callout: '⚠ Do not make trading or investment decisions based on this tool alone.' },
+      { h: 'Data sources & accuracy', p: [
+        'Data is retrieved from public third-party sources (including Binance, ECB reference rates via Frankfurter, gold-api, and GDELT). This data may be delayed, incomplete, inaccurate, or unavailable.',
+        'Some instruments use proxy or fallback data that the interface discloses explicitly — for example, gold candles are derived from the PAXG token, and silver relies on an embedded historical series. We make no warranty as to the accuracy, completeness, or continued availability of the data, which is provided "as is" and "as available."' ] },
+      { h: 'Limitation of liability', p: [
+        'To the fullest extent permitted by applicable law, we shall not be liable for any loss or damage of any kind — direct, indirect, or consequential — arising from the use of, or inability to use, the tool, or from reliance on any information in it.' ] },
+      { h: 'Third-party links & services', p: [
+        'The tool may display links or news headlines from external sources. We do not control, endorse, or guarantee the content of these sources; visiting them is subject to their terms and at your own risk.' ] },
+      { h: 'Changes to this notice & contact', p: [
+        'We may update this Disclaimer at any time; changes take effect upon posting to this page. For any inquiry about this notice or the tool, contact us via <a class="inline" href="https://hayyaak.trade">hayyaak.trade</a>.' ] },
+    ],
+    footer: 'An analysis and data-visualization tool only — it does not produce recommendations, trade signals, or financial advice.',
+  },
+};
+
+const state = { lang: 'ar', theme: 'dark' };
+
+function render() {
+  const t = T[state.lang];
+  const root = document.documentElement;
+  root.setAttribute('lang', state.lang);
+  root.setAttribute('dir', t.dir);
+  root.setAttribute('data-theme', state.theme);
+  document.title = t.docTitle + ' — ' + t.brandTitle;
+  document.getElementById('brand-title').textContent = t.brandTitle;
+  document.getElementById('brand-sub').textContent = t.brandSub;
+  document.getElementById('btn-ar').classList.toggle('active', state.lang === 'ar');
+  document.getElementById('btn-en').classList.toggle('active', state.lang === 'en');
+  const themeBtn = document.getElementById('btn-theme');
+  themeBtn.innerHTML = state.theme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+  themeBtn.title = state.theme === 'dark' ? t.themeToLight : t.themeToDark;
+  document.getElementById('back-text').textContent = t.back;
+  document.getElementById('doc-title').textContent = t.docTitle;
+  document.getElementById('updated-label').textContent = t.updatedLabel;
+  document.getElementById('updated-brand').textContent = t.updatedBrand;
+  const c = document.getElementById('content');
+  c.innerHTML = `<div class="lead">${t.lead}</div>` + t.sections.map((s) =>
+    `<h2 class="sec">${s.h}</h2>` +
+    s.p.map((para) => `<p class="body">${para}</p>`).join('') +
+    (s.callout ? `<div class="callout">${s.callout}</div>` : '')
+  ).join('');
+  document.getElementById('footer').textContent = '© ' + new Date().getFullYear() + ' — ' + t.footer;
+}
+
+document.getElementById('btn-ar').addEventListener('click', () => { state.lang = 'ar'; render(); });
+document.getElementById('btn-en').addEventListener('click', () => { state.lang = 'en'; render(); });
+document.getElementById('btn-theme').addEventListener('click', () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; render(); });
+render();
+</script>
+</body>
+</html>
