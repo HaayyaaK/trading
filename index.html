@@ -2854,10 +2854,13 @@ function startPolling(inst) {
 // Wiring
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// Collapsible cards — every card header toggles its body. Expanded by default.
-// Collapse state lives as a class on the static .card element, so it survives
-// renderAll() (which only rewrites body innerHTML) with no storage (§4).
+// Collapsible cards — every card header toggles its body. On load only the
+// first two cards (asset selection + current market reading) are expanded; the
+// rest start collapsed. Collapse state lives as a class on the static .card
+// element, so it survives renderAll() (which only rewrites body innerHTML) with
+// no storage — session-only, reset on reload (§4).
 // ---------------------------------------------------------------------------
+const EXPANDED_ON_LOAD = new Set(['selection', 'reading']);
 function cardSection(name) { return document.querySelector(`.card[data-card="${name}"]`); }
 function cardCollapsed(name) { const s = cardSection(name); return !!s && s.classList.contains('collapsed'); }
 
@@ -2865,11 +2868,15 @@ function setupCollapsibleCards() {
   // FontAwesome caret; expanded = down, collapsed = up (CSS rotate). Up/down
   // only — never left/right — so the direction reads the same in RTL and LTR.
   const chevron = '<i class="fa-solid fa-caret-down" aria-hidden="true"></i>';
-  document.querySelectorAll('.card .card-head').forEach((head) => {
+  document.querySelectorAll('.card[data-card] .card-head').forEach((head) => {
+    const section = head.closest('.card');
     head.appendChild(el('span', 'card-chevron', chevron));
     head.setAttribute('role', 'button');
     head.setAttribute('tabindex', '0');
-    head.setAttribute('aria-expanded', 'true');
+    // default state: first two cards open, the rest collapsed
+    const startCollapsed = !EXPANDED_ON_LOAD.has(section.dataset.card);
+    section.classList.toggle('collapsed', startCollapsed);
+    head.setAttribute('aria-expanded', String(!startCollapsed));
     const toggle = () => {
       const section = head.closest('.card');
       const collapsed = section.classList.toggle('collapsed');
