@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="en" dir="ltr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -177,7 +177,7 @@ const T = {
 // transition feels continuous instead of resetting to ar/dark.
 const params = new URLSearchParams(location.search);
 const state = {
-  lang: params.get('lang') === 'en' ? 'en' : 'ar',
+  lang: params.get('lang') === 'ar' ? 'ar' : 'en',
   theme: params.get('theme') === 'light' ? 'light' : 'dark',
 };
 

@@ -10,7 +10,7 @@
 // ============================================================================
 
 const appState = {
-  lang: 'ar',            // default Arabic (spec §2.1)
+  lang: 'en',            // default English (updated from the original ar default; §4: no persistence, so this is simply the static first-load default)
   theme: 'dark',
   assetClass: 'crypto',
   instrumentId: 'BTCUSD',
@@ -786,10 +786,11 @@ function startPolling(inst) {
 // there is no interaction path (mouse or keyboard) that can collapse them —
 // not just "permanently expanded with a dead button still showing." Their
 // distinct visual treatment lives in styles.css (accent-tinted gradient +
-// border). Every other card starts collapsed. Collapse state lives as a
-// class on the static .card element, so it survives renderAll() (which only
-// rewrites body innerHTML) with no storage — session-only, reset on reload
-// (§4).
+// border). Every card — including the collapsible ones — starts EXPANDED on
+// load; the toggle itself still works normally afterward. Collapse state
+// lives as a class on the static .card element, so it survives renderAll()
+// (which only rewrites body innerHTML) with no storage — session-only, reset
+// on reload (§4).
 // ---------------------------------------------------------------------------
 const ALWAYS_EXPANDED = new Set(['selection', 'reading']);
 function cardSection(name) { return document.querySelector(`.card[data-card="${name}"]`); }
@@ -808,8 +809,8 @@ function setupCollapsibleCards() {
     head.appendChild(el('span', 'card-chevron', chevron));
     head.setAttribute('role', 'button');
     head.setAttribute('tabindex', '0');
-    section.classList.add('collapsed'); // every collapsible card starts collapsed
-    head.setAttribute('aria-expanded', 'false');
+    section.classList.remove('collapsed'); // every card starts expanded; toggle still works below
+    head.setAttribute('aria-expanded', 'true');
     const toggle = () => {
       const collapsed = section.classList.toggle('collapsed');
       head.setAttribute('aria-expanded', String(!collapsed));

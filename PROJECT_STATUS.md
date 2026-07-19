@@ -223,6 +223,33 @@ Three more changes:
   time; resets on an actual poll tick; switching instrument (e.g. crypto’s
   20s → forex’s 300s) updates it immediately, not after a stale delay.
 
+### Default language + default card state changed (2026-07)
+Two static defaults, no persistence involved (confirmed: no localStorage/
+detection logic exists anywhere to override these — §4 still holds):
+- **Default language is now English** (`lang: 'en'` in `appState`, plus the
+  static `<html lang="en" dir="ltr">` in both `src/shell.html` and
+  `disclaimer.html` so there's no flash-of-Arabic before JS runs). Was `ar`.
+  The Arabic toggle is unaffected — still switches to ar/RTL normally.
+  `disclaimer.html`'s own no-query-param fallback default was updated to
+  match (it explicitly documents "defaults match the dashboard's own
+  defaults").
+- **Every collapsible card now starts expanded** (was: only Asset Selection
+  and Current Market Reading expanded, the rest collapsed).
+  `setupCollapsibleCards()` no longer adds the `collapsed` class on setup;
+  the toggle itself is untouched and still fully functional afterward
+  (verified: click collapses, click again re-expands; keyboard Enter/Space
+  still works). The two always-on cards (no toggle at all) are unaffected by
+  this change.
+
+Updated two pre-existing regression tests whose assertions encoded the *old*
+defaults (initial lang/dir, initial report language, the old "only two cards
+open" collapse check, and a lang-toggle test loop that only clicked to
+"switch to English" because English wasn't the default yet) — not new bugs,
+just stale expectations from before this change. Verified: fresh load is en/
+ltr with every card expanded, across both languages (after toggling), both
+themes, and the full breakpoint range (1440 down to 380px); charts render
+immediately since the charts card is no longer collapsed on load.
+
 ---
 
 ## Intentional exceptions to the original brief
